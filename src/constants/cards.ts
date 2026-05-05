@@ -53,6 +53,7 @@ export interface MasterCard {
   tradeable: boolean;
   sellable: boolean;
   bound: boolean;
+  approvedForPublicUse: boolean;
 }
 
 export const MASTER_CARDS: MasterCard[] = [
@@ -73,6 +74,7 @@ export const MASTER_CARDS: MasterCard[] = [
     tradeable: true,
     sellable: true,
     bound: false,
+    approvedForPublicUse: true,
   },
   // Common
   {
@@ -91,6 +93,7 @@ export const MASTER_CARDS: MasterCard[] = [
     tradeable: true,
     sellable: true,
     bound: false,
+    approvedForPublicUse: true,
   },
   // Rare
   {
@@ -109,6 +112,7 @@ export const MASTER_CARDS: MasterCard[] = [
     tradeable: true,
     sellable: true,
     bound: false,
+    approvedForPublicUse: true,
   },
   // Legendary
   {
@@ -127,5 +131,7 @@ export const MASTER_CARDS: MasterCard[] = [
     tradeable: true,
     sellable: true,
     bound: false,
+    approvedForPublicUse: true,
   }
 ];
+

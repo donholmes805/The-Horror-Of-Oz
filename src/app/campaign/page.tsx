@@ -19,25 +19,27 @@ import {
   Eye,
   Heart,
   Timer,
-  CheckCircle2,
   Sword,
-  Backpack,
-  AlertCircle,
-  Book,
-  Crosshair,
-  Sparkles,
-  Wind,
-  ShieldCheck,
+  Trophy,
   Navigation,
   Compass,
+  CheckCircle2,
+  AlertCircle,
+  Book,
+  Sparkles,
+  Backpack,
   Flame,
-  GripHorizontal
+  GripHorizontal,
+  Star,
+  X,
+  HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { doc, updateDoc, getDoc, arrayUnion, onSnapshot, serverTimestamp, setDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { BetaNotice } from "@/components/shared/BetaNotice";
 import Link from "next/link";
+import { ENEMIES, BOSSES, Enemy } from "@/constants/encounters";
 
 export default function CampaignBoard() {
   const { user, profile } = useAuth();
@@ -48,9 +50,20 @@ export default function CampaignBoard() {
   const [activeEvent, setActiveEvent] = useState<any>(null);
   const [activeEncounter, setActiveEncounter] = useState<any>(null);
   const [activeReward, setActiveReward] = useState<any>(null);
+  const [questComplete, setQuestComplete] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [toasts, setToasts] = useState<{id: string, message: string, type: 'success' | 'error' | 'info'}[]>([]);
+  const [isLegendOpen, setIsLegendOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
+
+  const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  };
 
   const handleNodeClick = (node: Node) => {
     if (progress?.revealedNodes.includes(node.id)) {
@@ -188,15 +201,19 @@ export default function CampaignBoard() {
       
       await updateDoc(doc(db, "playerProgress", user.uid), updates);
       setSelectedNode(null);
+      addToast(`Moved to ${node.name}`, 'success');
 
-      if (node.eventId && !progress.completedNodes.includes(node.eventId)) {
+      if (node.type === "FinalBoss") {
+        triggerBoss(node);
+      } else if (node.eventId && !progress.completedNodes.includes(node.eventId)) {
         triggerStoryEvent(node.eventId);
-      } else if (node.type === "Encounter" || node.type === "DangerPath") {
+      } else if (node.type === "Encounter" || node.type === "DangerPath" || node.type === "EncounterSearch" || node.type === "MiniBoss") {
         triggerEncounter(node);
       }
 
     } catch (err) {
       console.error(err);
+      addToast("Failed to move. Try again.", 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -224,8 +241,10 @@ export default function CampaignBoard() {
 
       await updateDoc(doc(db, "playerProgress", user.uid), updates);
       setActiveReward(result);
+      addToast(`Found: ${result.name}`, 'success');
     } catch (err) {
       console.error(err);
+      addToast("Search failed.", 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -243,22 +262,58 @@ export default function CampaignBoard() {
             label: "Stand Against the Mob", 
             req: "Courage 3", 
             canDo: stats.courage >= 3,
-            result: "Unlock Sir Hollin Thatch ally, +1 Courage"
+            result: "Unlock Sir Hollin Thatch ally, +1 Courage",
+            success: "You drive them back. Thatch is free.",
+            failure: "The mob is too strong. You are forced to retreat."
           },
           { 
             id: "c2", 
             label: "Sneak Around the Gallows", 
             req: "Memory 2", 
             canDo: stats.memory >= 2,
-            result: "Unlock Sir Hollin Thatch ally"
+            result: "Unlock Sir Hollin Thatch ally",
+            success: "Shadows are your friends. Thatch is free.",
+            failure: "A rusted gear squeaks. You are spotted."
           },
           { 
             id: "c3", 
             label: "Call for Mercy", 
             req: "Hope 3", 
             canDo: stats.hope >= 3,
-            result: "Unlock Sir Hollin Thatch ally, +1 Hope"
+            result: "Unlock Sir Hollin Thatch ally, +1 Hope",
+            success: "Your words resonate. Even tin hearts soften.",
+            failure: "Mercy is a foreign concept to these constructs."
           }
+        ]
+      });
+    } else if (eventId === "book1_story_living_arches") {
+      setActiveEvent({
+        id: eventId,
+        title: "Beneath the Living Arches",
+        description: "Bio-mechanical flora weaves a canopy of brass leaves and pulsing vines. The air smells of ozone and nectar.",
+        choices: [
+          { id: "c1", label: "Commune with the Core", req: "Memory 4", canDo: stats.memory >= 4, result: "+1 Memory, Reveal Hidden Search", success: "You understand the code. The forest speaks.", failure: "The static is deafening." },
+          { id: "c2", label: "Harvest Spare Parts", req: "Steel 3", canDo: stats.steel >= 3, result: "+20 Yellow Shards", success: "You take what you need from the metal stalks.", failure: "The vines lash out." }
+        ]
+      });
+    } else if (eventId === "book1_story_memory_of_kansas") {
+      setActiveEvent({
+        id: eventId,
+        title: "Memory of Kansas",
+        description: "The dust forms a familiar shape—a house, a dog, a voice calling your name from the cellar.",
+        choices: [
+          { id: "c1", label: "Embrace the Vision", req: "Hope 5", canDo: stats.hope >= 5, result: "+2 Hope, -1 Resilience", success: "The warmth is real, for a moment.", failure: "It's just ash in the wind." },
+          { id: "c2", label: "Deny the Mirage", req: "Steel 4", canDo: stats.steel >= 4, result: "+2 Steel", success: "Oz is the only reality now.", failure: "Doubt creeps in." }
+        ]
+      });
+    } else if (eventId === "book1_story_siege_begins") {
+      setActiveEvent({
+        id: eventId,
+        title: "The Siege Begins",
+        description: "Rebel forces gather at the Iron Maw. The sky is black with the smoke of the forges.",
+        choices: [
+          { id: "c1", label: "Lead the Vanguard", req: "Courage 6", canDo: stats.courage >= 6, result: "+2 Courage, +50 Shards", success: "You are the spearhead of the revolution.", failure: "The wall is too high." },
+          { id: "c2", label: "Support the Artillery", req: "Steel 5", canDo: stats.steel >= 5, result: "+1 Steel, +30 Shards", success: "Steel meets steel. The gates buckle.", failure: "A miscalculation cost you dearly." }
         ]
       });
     }
@@ -296,12 +351,21 @@ export default function CampaignBoard() {
   };
 
   const triggerEncounter = (node: Node) => {
-    setActiveEncounter({
-      name: "Marshal Scout",
-      health: 2,
-      threat: 1,
-      description: "A metallic sentinel scouts the ash fields, eyes glowing with a cold, blue light."
-    });
+    const pool = Object.values(ENEMIES);
+    // Logic to select enemy based on section or type
+    let enemy = pool[Math.floor(Math.random() * pool.length)];
+    
+    if (node.type === "MiniBoss") {
+      enemy = ENEMIES["clockwork_sentinel"];
+    } else if (node.section === 1) {
+      enemy = ENEMIES["marshal_scout"];
+    }
+
+    setActiveEncounter(enemy);
+  };
+
+  const triggerBoss = (node: Node) => {
+    setActiveEncounter({ ...BOSSES["marshal_argent"], isBoss: true });
   };
 
   const handleEncounterResolve = async () => {
@@ -320,6 +384,24 @@ export default function CampaignBoard() {
       }
 
       await updateDoc(doc(db, "playerProgress", user.uid), updates);
+      
+      // Check if quest just completed
+      if (progress.questProgress?.book1_quest_first_step?.status === "active") {
+        const quest = progress.questProgress.book1_quest_first_step;
+        const currentSteps = [...quest.steps];
+        if (!currentSteps.includes("survive_encounter")) currentSteps.push("survive_encounter");
+        
+        if (currentSteps.includes("scour_area") && currentSteps.includes("rescue_thatch") && currentSteps.includes("survive_encounter")) {
+          setQuestComplete({
+            title: "First Step Complete",
+            description: "You have survived the initial horrors of the Red Country and secured a key ally. The path ahead is long, but you are no longer alone.",
+            rewardName: "Sir Hollin Thatch (Founder Edition)"
+          });
+          // Note: Logic to update quest status to 'completed' and grant the card would go here, 
+          // but I'm keeping it to UI/Display triggers as requested.
+        }
+      }
+
       setActiveEncounter(null);
       setActiveReward({ name: "10 Yellow Shards", type: "shards", value: 10 });
       await updateDoc(doc(db, "users", user.uid), { yellowShards: increment(10) });
@@ -420,84 +502,146 @@ export default function CampaignBoard() {
           />
         </div>
 
-        {/* Floating HUD Container */}
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-6 flex justify-between items-start pointer-events-none">
-          {/* AP Counter */}
-          <motion.div 
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="glass-panel px-10 py-4 rounded-full border-white/5 flex items-center gap-8 shadow-2xl bg-zinc-950/60 backdrop-blur-3xl pointer-events-auto"
-          >
-            <div className="flex items-center gap-3">
-              <Zap className="w-5 h-5 text-amber-500 fill-amber-500/20" />
-              <div className="flex flex-col">
-                <span className="text-[7px] uppercase font-bold tracking-[0.3em] text-zinc-500">Action Points</span>
-                <div className="flex gap-2.5 mt-1">
+        {/* Cinematic Header HUD */}
+        <div className="fixed top-24 inset-x-0 z-40 px-6 max-w-7xl mx-auto pointer-events-none">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            {/* Campaign Context */}
+            <motion.div 
+              initial={{ x: -30, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              className="glass-panel p-6 rounded-[2rem] border-primary/20 bg-black/80 backdrop-blur-2xl pointer-events-auto min-w-[320px] shadow-[0_15px_40px_rgba(0,0,0,0.8)]"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center">
+                  <Book className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-zinc-500 text-[9px] uppercase tracking-[0.4em] font-black leading-tight">Book I: Blood on the Yellow Brick</h1>
+                  <h2 className="text-white text-xl font-serif italic tracking-tight">Campaign: Red Country</h2>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-end">
+                  <span className="text-zinc-500 text-[8px] uppercase tracking-widest font-bold">Current Objective</span>
+                  <span className="text-primary text-[10px] font-serif italic">Find the Rebel Trail</span>
+                </div>
+                <div className="w-full bg-zinc-900 h-1 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${((progress?.completedNodes?.length || 0) / BOOK_I_NODES.length) * 100}%` }}
+                    className="bg-primary h-full shadow-[0_0_10px_rgba(200,155,44,0.6)]"
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[7px] text-zinc-600 uppercase font-black tracking-widest pt-1">
+                  <span>Progress</span>
+                  <span>{Math.round(((progress?.completedNodes?.length || 0) / BOOK_I_NODES.length) * 100)}% Complete</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Main Stats HUD */}
+            <motion.div 
+              initial={{ y: -30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="flex flex-wrap items-center gap-3 pointer-events-auto"
+            >
+              {/* AP Counter Pill */}
+              <div className="glass-panel px-6 py-3 rounded-full border-primary/20 bg-black/80 flex items-center gap-4 shadow-xl group relative">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-primary fill-primary/20" />
+                  <span className="text-[9px] uppercase font-black tracking-widest text-zinc-400">AP</span>
+                </div>
+                
+                {/* AP Tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 w-48 z-[60]">
+                   <div className="glass-panel p-4 rounded-2xl border-white/10 bg-black/90 backdrop-blur-3xl text-center space-y-2 shadow-2xl">
+                      <p className="text-[8px] uppercase tracking-widest text-primary font-black">Action Points</p>
+                      <p className="text-[10px] text-zinc-400 font-serif italic leading-relaxed">AP is spent to move, search, and interact. End your turn to refresh AP.</p>
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-black/90" />
+                   </div>
+                </div>
+
+                <div className="flex gap-2">
                   {[1, 2, 3].map((p) => (
                     <motion.div 
                       key={p} 
                       animate={p <= (progress?.actionPoints || 0) ? { scale: [1, 1.2, 1], opacity: 1 } : { scale: 1, opacity: 0.2 }}
                       className={cn(
-                        "w-5 h-5 rounded-full border-2 transition-all",
-                        p <= (progress?.actionPoints || 0) ? "bg-amber-500 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.6)]" : "bg-transparent border-zinc-700"
+                        "w-4 h-4 rounded-full border-2 transition-all",
+                        p <= (progress?.actionPoints || 0) ? "bg-primary border-primary-accent shadow-[0_0_10px_rgba(200,155,44,0.6)]" : "bg-transparent border-zinc-700"
                       )}
                     />
                   ))}
                 </div>
+                {progress?.actionPoints === 0 && (
+                  <motion.button
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    onClick={handleEndTurn}
+                    disabled={isProcessing}
+                    className="ml-2 px-4 py-1.5 bg-primary/20 hover:bg-primary/40 border border-primary/30 rounded-full text-[8px] uppercase tracking-widest text-primary font-black transition-all flex items-center gap-2"
+                  >
+                    <span>Rest</span>
+                    <Timer className="w-3 h-3" />
+                  </motion.button>
+                )}
               </div>
-            </div>
 
-            {progress?.actionPoints === 0 && (
-              <motion.button
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                onClick={handleEndTurn}
-                disabled={isProcessing}
-                className="premium-button py-2.5 px-6 text-[9px] uppercase tracking-widest flex items-center gap-2 group"
+              {/* Map Legend Toggle */}
+              <button 
+                onClick={() => setIsLegendOpen(true)}
+                className="glass-panel p-3 rounded-full border-primary/20 bg-black/80 text-primary hover:bg-primary/10 transition-all shadow-xl"
               >
-                <span>Rest the Path</span>
-                <Timer className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-700" />
-              </motion.button>
-            )}
-          </motion.div>
+                <HelpCircle className="w-5 h-5" />
+              </button>
 
-          {/* Quick Stats Panel */}
-          <motion.div 
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="glass-panel p-5 rounded-[2rem] border-white/5 bg-zinc-950/60 backdrop-blur-3xl pointer-events-auto space-y-4 min-w-[200px]"
-          >
-            <div className="space-y-2">
-              <div className="flex justify-between items-center px-1">
-                <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-bold">Resilience</span>
-                <span className="text-[10px] text-red-500 font-serif italic">{stats?.health || 0} / 10 HP</span>
+              {/* Shards Pill */}
+              <div className="glass-panel px-5 py-3 rounded-full border-primary/20 bg-black/80 flex items-center gap-3 shadow-xl">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-lg font-serif italic text-white leading-none">{profile?.yellowShards || 0}</span>
+                <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold">Shards</span>
               </div>
-              <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5 p-[1px]">
-                <motion.div 
-                  className="bg-gradient-to-r from-red-800 to-red-500 h-full rounded-full"
-                  animate={{ width: `${(stats?.health || 0) * 10}%` }}
-                  transition={{ type: "spring", bounce: 0, duration: 1 }}
-                />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-4">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-lg bg-zinc-800 text-zinc-400"><Shield className="w-3.5 h-3.5" /></div>
-                <div className="flex flex-col leading-none">
-                   <span className="text-[7px] uppercase tracking-tighter text-zinc-500 font-bold">Steel</span>
-                   <span className="text-xs text-white font-serif">{stats?.steel || 0}</span>
+              {/* Node Status Pill */}
+              <div className="hidden lg:flex glass-panel px-6 py-3 rounded-full border-primary/20 bg-black/80 items-center gap-4 shadow-xl">
+                <MapPin className="w-4 h-4 text-zinc-400" />
+                <div className="flex flex-col">
+                  <span className="text-[7px] uppercase font-bold tracking-widest text-zinc-500">Currently At</span>
+                  <span className="text-xs text-white font-serif italic truncate max-w-[120px]">
+                    {BOOK_I_NODES.find(n => n.id === progress?.currentNode)?.name || "The Void"}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-lg bg-zinc-800 text-zinc-400"><Eye className="w-3.5 h-3.5" /></div>
-                <div className="flex flex-col leading-none">
-                   <span className="text-[7px] uppercase tracking-tighter text-zinc-500 font-bold">Mind</span>
-                   <span className="text-xs text-white font-serif">{stats?.memory || 0}</span>
+            </motion.div>
+          </div>
+
+          {/* Stat Cards - Secondary HUD Row */}
+          <div className="mt-6 flex flex-wrap gap-3">
+            {[
+              { icon: <Heart className="w-3 h-3" />, label: "Resilience", value: `${stats?.health || 0}/10`, color: "text-red-500", bg: "bg-red-500/10" },
+              { icon: <Shield className="w-3 h-3" />, label: "Steel", value: stats?.steel || 0, color: "text-zinc-300", bg: "bg-zinc-500/10" },
+              { icon: <Compass className="w-3 h-3" />, label: "Courage", value: stats?.courage || 0, color: "text-amber-500", bg: "bg-amber-500/10" },
+              { icon: <Star className="w-3 h-3" />, label: "Hope", value: stats?.hope || 0, color: "text-blue-400", bg: "bg-blue-500/10" },
+              { icon: <Eye className="w-3 h-3" />, label: "Memory", value: stats?.memory || 0, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + (i * 0.05) }}
+                className="glass-panel px-4 py-2.5 rounded-2xl border-white/5 bg-black/60 pointer-events-auto flex items-center gap-3 shadow-lg"
+              >
+                <div className={cn("p-1.5 rounded-lg", stat.bg, stat.color)}>
+                  {stat.icon}
                 </div>
-              </div>
-            </div>
-          </motion.div>
+                <div className="flex flex-col">
+                  <span className="text-[7px] uppercase tracking-tighter text-zinc-500 font-bold">{stat.label}</span>
+                  <span className={cn("text-xs font-serif italic font-bold", stat.color)}>{stat.value}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
 
         {/* Map Scroll Container */}
@@ -569,6 +713,7 @@ export default function CampaignBoard() {
               const isCurrent = progress?.currentNode === node.id;
               const isCompleted = progress?.completedNodes.includes(node.id);
               const isVisited = progress?.visitedNodes.includes(node.id);
+              const isBoss = node.type.includes("Boss");
 
               return (
                 <motion.div
@@ -584,51 +729,61 @@ export default function CampaignBoard() {
                     {isCurrent && (
                       <motion.div 
                         initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1.8, opacity: [0.1, 0.25, 0.1] }}
+                        animate={{ scale: 2.2, opacity: [0.1, 0.4, 0.1] }}
                         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute inset-0 bg-amber-500 rounded-full blur-[40px]"
+                        className="absolute inset-0 bg-primary rounded-full blur-[50px]"
+                      />
+                    )}
+                    {isBoss && isUnlocked && (
+                      <motion.div 
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 2.5, opacity: [0.1, 0.3, 0.1] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-0 bg-secondary rounded-full blur-[60px]"
                       />
                     )}
                   </AnimatePresence>
 
                   <motion.button
                     onClick={() => handleNodeClick(node)}
-                    whileHover={isUnlocked ? { scale: 1.2, zIndex: 50 } : {}}
+                    whileHover={isUnlocked ? { scale: 1.25, zIndex: 50 } : {}}
                     whileTap={isUnlocked ? { scale: 0.9 } : {}}
                     className={cn(
-                      "relative w-20 h-20 rounded-full border-[3px] flex items-center justify-center transition-all duration-700 group/node",
-                      isCurrent ? "bg-amber-500 border-white/30 shadow-[0_0_40px_rgba(245,158,11,0.8)] z-20 scale-110" :
-                      isCompleted ? "bg-zinc-950/80 border-amber-500/60 shadow-[0_0_20px_rgba(245,158,11,0.2)]" :
-                      isUnlocked ? "bg-zinc-950/90 backdrop-blur-3xl border-zinc-700/50 hover:border-amber-500/50" : 
-                      "bg-black/40 border-white/5 opacity-20 grayscale cursor-not-allowed"
+                      "relative w-24 h-24 rounded-full border-[3px] flex items-center justify-center transition-all duration-700 group/node",
+                      isCurrent ? "bg-primary border-white/40 shadow-[0_0_60px_rgba(200,155,44,0.8)] z-20 scale-110" :
+                      isBoss && isUnlocked ? "bg-black/90 border-secondary shadow-[0_0_40px_rgba(139,17,17,0.6)]" :
+                      isCompleted ? "bg-zinc-950/80 border-primary/40 shadow-[0_0_20px_rgba(200,155,44,0.1)]" :
+                      isUnlocked ? "bg-zinc-950/90 backdrop-blur-3xl border-zinc-700/50 hover:border-primary/50" : 
+                      "bg-black/60 border-white/5 opacity-30 grayscale cursor-not-allowed"
                     )}
                   >
                     <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover/node:opacity-100 transition-opacity" />
                     
                     {isCurrent ? <Navigation className="text-black w-10 h-10 fill-black" /> : 
-                     node.type === "Search" || node.type === "EncounterSearch" ? <Search className={cn("w-7 h-7", isUnlocked ? "text-amber-500" : "text-zinc-700")} /> :
-                     node.type === "Encounter" || node.type === "DangerPath" || node.type === "MiniBoss" || node.type === "FinalBoss" ? <Skull className={cn("w-7 h-7", isUnlocked ? "text-red-600" : "text-zinc-700")} /> :
-                     node.type === "Story" || node.type === "StoryChoice" ? <Book className={cn("w-7 h-7", isUnlocked ? "text-blue-400" : "text-zinc-700")} /> :
-                     node.type === "LockedDoor" ? <Lock className={cn("w-7 h-7", isUnlocked ? "text-zinc-400" : "text-zinc-700")} /> :
-                     <div className={cn("w-4 h-4 rounded-full", isUnlocked ? "bg-amber-500/50" : "bg-zinc-800")} />}
+                     isCompleted ? <CheckCircle2 className="w-8 h-8 text-primary shadow-glow" /> :
+                     node.type === "Search" || node.type === "EncounterSearch" ? <Search className={cn("w-8 h-8", isUnlocked ? "text-primary" : "text-zinc-700")} /> :
+                     isBoss || node.type === "Encounter" || node.type === "DangerPath" ? <Skull className={cn("w-8 h-8", isUnlocked ? "text-secondary" : "text-zinc-700")} /> :
+                     node.type === "Story" || node.type === "StoryChoice" ? <Book className={cn("w-8 h-8", isUnlocked ? "text-blue-400" : "text-zinc-700")} /> :
+                     node.type === "LockedDoor" ? <Lock className={cn("w-8 h-8", isUnlocked ? "text-zinc-400" : "text-zinc-700")} /> :
+                     <div className={cn("w-5 h-5 rounded-full", isUnlocked ? "bg-primary/50" : "bg-zinc-800")} />}
                     
                     {/* Unvisited Glow */}
-                    {isUnlocked && !isVisited && (
-                      <span className="absolute -top-1 -right-1 flex h-5 w-5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-5 w-5 bg-amber-500 shadow-lg border border-white/30" />
+                    {isUnlocked && !isVisited && !isCurrent && (
+                      <span className="absolute -top-1 -right-1 flex h-6 w-6">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                        <span className="relative inline-flex rounded-full h-6 w-6 bg-primary shadow-lg border border-white/30" />
                       </span>
                     )}
 
                     {/* Node Label Overlay */}
-                    <div className="absolute top-full mt-8 left-1/2 -translate-x-1/2 w-56 text-center pointer-events-none transition-all duration-500 group-hover/node:mt-10">
+                    <div className="absolute top-full mt-10 left-1/2 -translate-x-1/2 w-64 text-center pointer-events-none transition-all duration-500 group-hover/node:mt-12">
                       <p className={cn(
-                        "text-[9px] uppercase font-bold tracking-[0.4em] leading-tight transition-all duration-500",
-                        isCurrent || isUnlocked ? "text-zinc-200 opacity-100" : "text-zinc-700 opacity-40"
+                        "text-[10px] uppercase font-black tracking-[0.5em] leading-tight transition-all duration-500",
+                        isCurrent || isUnlocked ? "text-zinc-100 opacity-100 drop-shadow-lg" : "text-zinc-700 opacity-40"
                       )}>
                         {node.name}
                       </p>
-                      {isVisited && !isCurrent && <span className="text-[7px] text-zinc-600 uppercase font-black mt-2 tracking-[0.3em] block">Explored</span>}
+                      {isVisited && !isCurrent && <span className="text-[8px] text-primary/40 uppercase font-black mt-3 tracking-[0.4em] block">Legacy Forged</span>}
                     </div>
                   </motion.button>
                 </motion.div>
@@ -637,163 +792,360 @@ export default function CampaignBoard() {
           </motion.div>
         </div>
 
+        {/* Map Legend */}
+        <div className="fixed bottom-32 left-10 z-40 hidden md:block">
+           <div className={cn(
+             "glass-panel transition-all duration-500 overflow-hidden bg-black/80 backdrop-blur-3xl border-white/5",
+             isLegendOpen ? "w-64 p-6 rounded-[2rem]" : "w-14 h-14 p-0 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/5"
+           )} onClick={() => !isLegendOpen && setIsLegendOpen(true)}>
+              {isLegendOpen ? (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Map Legend</span>
+                    <button onClick={(e) => { e.stopPropagation(); setIsLegendOpen(false); }} className="p-1 hover:bg-white/10 rounded-full transition-colors"><ChevronRight className="w-4 h-4 rotate-180" /></button>
+                  </div>
+                  <div className="space-y-3">
+                    {[
+                      { icon: <MapPin className="w-3 h-3 text-primary" />, label: "Current Node" },
+                      { icon: <CheckCircle2 className="w-3 h-3 text-primary" />, label: "Completed" },
+                      { icon: <div className="w-3 h-3 rounded-full border border-primary/40 bg-primary/20" />, label: "Available" },
+                      { icon: <Lock className="w-3 h-3 text-zinc-600" />, label: "Locked" },
+                      { icon: <Skull className="w-3 h-3 text-red-600" />, label: "Boss / Danger" },
+                      { icon: <Search className="w-3 h-3 text-amber-500" />, label: "Searchable" },
+                      { icon: <Book className="w-3 h-3 text-blue-400" />, label: "Story Event" },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center">{item.icon}</div>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-tighter font-bold">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Info className="w-6 h-6 text-zinc-500" />
+              )}
+           </div>
+        </div>
+
         {/* Universal Map Controls */}
         <div className="fixed bottom-10 right-10 z-40 flex items-center gap-4">
-           <button 
+           <motion.button 
+             whileHover={{ scale: 1.1 }}
+             whileTap={{ scale: 0.9 }}
              onClick={centerOnCurrentNode}
-             className="glass-panel p-5 rounded-full border-white/10 text-amber-500 hover:bg-amber-500/10 transition-all shadow-2xl group active:scale-95"
+             className="glass-panel p-5 rounded-full border-primary/20 text-primary hover:bg-primary/10 transition-all shadow-2xl group"
            >
              <Compass className="w-8 h-8 group-hover:rotate-[360deg] transition-transform duration-1000" />
-           </button>
-           <div className="glass-panel px-6 py-4 rounded-[2rem] border-white/10 text-zinc-500 font-serif italic text-sm flex items-center gap-3">
+           </motion.button>
+           <div className="hidden sm:flex glass-panel px-6 py-4 rounded-[2rem] border-white/10 text-zinc-500 font-serif italic text-sm items-center gap-3 bg-black/60 backdrop-blur-xl">
              <GripHorizontal className="w-4 h-4" />
-             <span>Pan the Path</span>
+             <span>Pan to Navigate</span>
            </div>
         </div>
 
         {/* CINEMATIC MODALS */}
         <AnimatePresence>
-          {/* Node Interaction Panel */}
+          {/* Node Interaction Panel - Responsive Modal/Bottom Sheet */}
           {selectedNode && !activeEvent && !activeEncounter && !activeReward && (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-2xl"
+              className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-6 bg-black/90 backdrop-blur-xl"
+              onClick={() => setSelectedNode(null)}
             >
               <motion.div 
-                layoutId={`node-panel-${selectedNode.id}`}
-                initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 30 }}
-                className="w-full max-w-2xl glass-panel p-12 relative rounded-[3rem] border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)] bg-zinc-950/80"
+                initial={{ y: "100%", scale: 0.95 }}
+                animate={{ y: 0, scale: 1 }}
+                exit={{ y: "100%", scale: 0.95 }}
+                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                className="w-full max-w-2xl glass-panel p-8 md:p-12 relative rounded-t-[2.5rem] md:rounded-[3rem] border-primary/20 shadow-[0_-20px_100px_rgba(0,0,0,1)] bg-[#0a0a0a]/95 pointer-events-auto overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
               >
-                <div className="absolute top-10 right-10 flex gap-2">
-                   <button onClick={() => setSelectedNode(null)} className="p-3 rounded-full hover:bg-white/5 transition-colors text-zinc-500 hover:text-white">
-                      <ChevronRight className="rotate-180 w-6 h-6" />
-                   </button>
-                </div>
+                {/* Background Decor */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50" />
+                <Compass className="absolute -top-12 -right-12 w-64 h-64 text-primary/5 rotate-12 pointer-events-none" />
 
-                <div className="mb-10 space-y-2">
-                  <div className="flex items-center gap-4">
-                    <div className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[8px] font-black uppercase tracking-[0.3em]">{selectedNode.type}</div>
-                    <div className="h-px flex-1 bg-gradient-to-r from-amber-500/20 to-transparent" />
+                {/* Header Section */}
+                <div className="flex justify-between items-start mb-8">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-[0.3em] border shadow-inner",
+                        selectedNode.type.includes("Boss") ? "bg-red-500/10 border-red-500/30 text-red-500" :
+                        selectedNode.type === "Search" ? "bg-amber-500/10 border-amber-500/30 text-amber-500" :
+                        "bg-primary/10 border-primary/30 text-primary"
+                      )}>
+                        {selectedNode.type}
+                      </div>
+                      <div className="h-px w-8 bg-white/10" />
+                      <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest">Section {selectedNode.section}</span>
+                    </div>
+                    <h2 className={cn(
+                      "text-4xl md:text-5xl text-white font-serif italic tracking-tight leading-tight",
+                      selectedNode.type.includes("Boss") && "gold-gradient-text"
+                    )}>
+                      {selectedNode.name}
+                    </h2>
                   </div>
-                  <h2 className="text-5xl text-white font-serif italic leading-tight">
-                    {selectedNode.name}
-                  </h2>
+                  <button 
+                    onClick={() => setSelectedNode(null)}
+                    className="p-3 rounded-full hover:bg-white/5 text-zinc-600 hover:text-white transition-all border border-white/5"
+                  >
+                    <ChevronRight className="rotate-90 w-5 h-5" />
+                  </button>
                 </div>
 
-                <div className="relative mb-12 p-8 rounded-[2rem] bg-black/40 border border-white/5 overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-red-900/5 opacity-40" />
+                {/* Description Box */}
+                <div className="relative mb-10 p-8 rounded-3xl bg-black/40 border border-white/5 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-40" />
                   <p className="relative z-10 text-zinc-400 italic leading-relaxed text-xl font-serif">
                     "{selectedNode.description}"
                   </p>
-                  <Flame className="absolute -bottom-6 -right-6 w-32 h-32 text-amber-500/5 group-hover:text-amber-500/10 transition-colors" />
                 </div>
 
-                {selectedNode.requirements && (
-                  <div className="mb-12 p-8 glass-panel bg-amber-500/5 border-amber-500/20 rounded-[2rem]">
-                    <h4 className="text-[10px] text-amber-500 font-bold uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
-                      <Lock className="w-4 h-4" /> Requirement Check
-                    </h4>
-                    <div className="space-y-5">
-                      {selectedNode.requirements.key && (
-                        <div className={cn("flex justify-between items-center p-4 rounded-xl border transition-all", progress.inventoryKeys.includes(selectedNode.requirements.key) ? "border-amber-500/30 bg-amber-500/5 text-amber-500" : "border-white/5 bg-white/2 text-zinc-600")}>
-                          <span className="flex items-center gap-4 text-sm font-bold uppercase tracking-widest"><Key className="w-5 h-5" /> {selectedNode.requirements.key}</span>
-                          {progress.inventoryKeys.includes(selectedNode.requirements.key) ? <CheckCircle2 className="w-5 h-5 shadow-glow" /> : <Lock className="w-5 h-5" />}
-                        </div>
-                      )}
-                      {selectedNode.requirements.stat && (
-                        <div className={cn("flex justify-between items-center p-4 rounded-xl border transition-all", stats[selectedNode.requirements.stat.name] >= selectedNode.requirements.stat.value ? "border-amber-500/30 bg-amber-500/5 text-amber-500" : "border-white/5 bg-white/2 text-zinc-600")}>
-                          <span className="flex items-center gap-4 text-sm font-bold uppercase tracking-widest"><Sparkles className="w-5 h-5" /> {selectedNode.requirements.stat.name} {selectedNode.requirements.stat.value}+</span>
-                          {stats[selectedNode.requirements.stat.name] >= selectedNode.requirements.stat.value ? <CheckCircle2 className="w-5 h-5 shadow-glow" /> : <Lock className="w-5 h-5" />}
+                {/* Requirements / Status Checklist */}
+                <div className="mb-10 space-y-6">
+                  {/* Status Banner */}
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <div className={cn(
+                      "w-10 h-10 rounded-xl flex items-center justify-center border",
+                      progress?.currentNode === selectedNode.id ? "bg-primary/10 border-primary/30 text-primary" :
+                      progress?.completedNodes.includes(selectedNode.id) ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500" :
+                      progress?.unlockedNodes.includes(selectedNode.id) ? "bg-amber-500/10 border-amber-500/30 text-amber-500" :
+                      "bg-zinc-900 border-white/5 text-zinc-600"
+                    )}>
+                      {progress?.currentNode === selectedNode.id ? <Navigation className="w-5 h-5" /> :
+                       progress?.completedNodes.includes(selectedNode.id) ? <CheckCircle2 className="w-5 h-5" /> :
+                       progress?.unlockedNodes.includes(selectedNode.id) ? <Compass className="w-5 h-5" /> :
+                       <Lock className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <p className="text-[8px] uppercase font-black tracking-widest text-zinc-500">Node Status</p>
+                      <p className="text-sm text-zinc-200 font-serif italic">
+                        {progress?.currentNode === selectedNode.id ? "Presently Occupying" :
+                         progress?.completedNodes.includes(selectedNode.id) ? "Chronicle Recorded" :
+                         progress?.unlockedNodes.includes(selectedNode.id) ? "Path Visible" :
+                         "Obscured by Mist"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Locked State Checklist */}
+                  {selectedNode.requirements && (
+                    <div className="p-8 rounded-[2rem] bg-zinc-900/40 border border-white/5 space-y-6">
+                      <div className="flex items-center justify-between">
+                         <h4 className="text-[9px] text-zinc-500 font-black uppercase tracking-[0.4em] flex items-center gap-2">
+                           <Lock className="w-3 h-3" /> Entry Requirements
+                         </h4>
+                         {!checkRequirements(selectedNode) && (
+                           <span className="text-[8px] text-amber-500/60 uppercase font-black animate-pulse">Required Artifacts Missing</span>
+                         )}
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {selectedNode.requirements.key && (
+                          <div className={cn(
+                            "flex justify-between items-center p-5 rounded-xl border transition-all",
+                            progress.inventoryKeys.includes(selectedNode.requirements.key) ? "bg-primary/5 border-primary/20 text-primary" : "bg-white/[0.02] border-white/5 text-zinc-600"
+                          )}>
+                            <div className="flex items-center gap-4">
+                              <Key className="w-4 h-4" />
+                              <span className="text-[11px] uppercase font-black tracking-widest">{selectedNode.requirements.key.replace("-", " ")}</span>
+                            </div>
+                            {progress.inventoryKeys.includes(selectedNode.requirements.key) ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                          </div>
+                        )}
+                        {selectedNode.requirements.stat && (
+                          <div className={cn(
+                            "flex justify-between items-center p-5 rounded-xl border transition-all",
+                            stats[selectedNode.requirements.stat.name] >= selectedNode.requirements.stat.value ? "bg-blue-500/5 border-blue-500/20 text-blue-400" : "bg-white/[0.02] border-white/5 text-zinc-600"
+                          )}>
+                            <div className="flex items-center gap-4">
+                              <Sparkles className="w-4 h-4" />
+                              <span className="text-[11px] uppercase font-black tracking-widest">{selectedNode.requirements.stat.name} {selectedNode.requirements.stat.value}+</span>
+                            </div>
+                            {stats[selectedNode.requirements.stat.name] >= selectedNode.requirements.stat.value ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Suggested Next Step */}
+                      {!checkRequirements(selectedNode) && (
+                        <div className="pt-4 border-t border-white/5">
+                           <p className="text-[8px] uppercase font-black tracking-widest text-zinc-600 mb-2">Suggested Next Step</p>
+                           <p className="text-[10px] text-zinc-400 font-serif italic">
+                             {selectedNode.requirements.key === "rust-key" ? "Scour the Farmhouse Ruins or Ash Field for a rusted relic." :
+                              selectedNode.requirements.key === "steel-gate-key" ? "Seek audience with the rebels to obtain the City of Steel clearance." :
+                              "Consult your map for other trails to increase your stats or find hidden keys."}
+                           </p>
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                <div className="flex gap-6">
-                  {progress?.unlockedNodes.includes(selectedNode.id) && progress?.currentNode !== selectedNode.id ? (
+                {/* Actions Section */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {progress?.currentNode === selectedNode.id ? (
+                    <>
+                      {(selectedNode.type === "Search" || selectedNode.type === "EncounterSearch" || selectedNode.type === "HiddenSearch") && (
+                        <motion.button 
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleSearch(selectedNode)}
+                          disabled={progress.actionPoints < 1 || isProcessing}
+                          className="premium-button premium-button-gold py-6 text-xl flex items-center justify-center gap-4 rounded-2xl disabled:opacity-30"
+                        >
+                          <Search className="w-6 h-6" /> 
+                          <div className="text-left">
+                            <p className="leading-none mb-1">Search Area</p>
+                            <p className="text-[8px] uppercase tracking-widest opacity-60">Cost: 1 AP</p>
+                          </div>
+                        </motion.button>
+                      )}
+                      {selectedNode.eventId && !progress.completedNodes.includes(selectedNode.eventId) && (
+                         <motion.button 
+                           whileHover={{ scale: 1.02 }}
+                           whileTap={{ scale: 0.98 }}
+                           onClick={() => triggerStoryEvent(selectedNode.eventId!)}
+                           className="premium-button py-6 text-xl flex items-center justify-center gap-4 rounded-2xl"
+                         >
+                           <Book className="w-6 h-6" />
+                           <div className="text-left">
+                             <p className="leading-none mb-1">Begin Event</p>
+                             <p className="text-[8px] uppercase tracking-widest opacity-60">Story Unfolds</p>
+                           </div>
+                         </motion.button>
+                      )}
+                      <div className="flex items-center justify-center p-6 rounded-2xl border border-white/5 bg-white/[0.01] text-zinc-600 font-serif italic text-sm italic col-span-full">
+                         You are currently here.
+                      </div>
+                    </>
+                  ) : progress?.unlockedNodes.includes(selectedNode.id) ? (
                     <motion.button 
-                      whileHover={{ scale: 1.02 }}
+                      whileHover={{ scale: 1.02, boxShadow: "0 0 40px rgba(200,155,44,0.3)" }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleMove(selectedNode)}
                       disabled={progress.actionPoints < 1 || isProcessing || !checkRequirements(selectedNode)}
-                      className="flex-1 premium-button py-6 text-lg flex items-center justify-center gap-4 shadow-xl disabled:grayscale disabled:opacity-30"
+                      className="col-span-full premium-button premium-button-gold py-8 text-2xl flex items-center justify-center gap-5 disabled:grayscale disabled:opacity-30 rounded-3xl"
                     >
-                      <Navigation className="w-6 h-6" /> Step onto Path
+                      <Navigation className="w-8 h-8" /> 
+                      <div className="text-left">
+                        <p className="leading-none mb-1">Step into the Night</p>
+                        <p className="text-[9px] uppercase tracking-[0.2em] opacity-60">Travel Cost: 1 AP</p>
+                      </div>
                     </motion.button>
-                  ) : progress?.currentNode === selectedNode.id && (selectedNode.type === "Search" || selectedNode.type === "EncounterSearch") ? (
-                    <motion.button 
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleSearch(selectedNode)}
-                      disabled={progress.actionPoints < 1 || isProcessing}
-                      className="flex-1 premium-button py-6 text-lg flex items-center justify-center gap-4 bg-gradient-to-r from-red-900 to-amber-800 border-none shadow-[0_0_30px_rgba(139,17,17,0.4)]"
-                    >
-                      <Search className="w-6 h-6" /> Scour the Ruins
-                    </motion.button>
-                  ) : progress?.currentNode === selectedNode.id ? (
-                    <div className="flex-1 glass-panel border-amber-500/30 bg-amber-500/10 py-6 text-center rounded-2xl flex items-center justify-center gap-4 text-amber-500">
-                      <MapPin className="w-6 h-6 animate-bounce" />
-                      <span className="font-bold uppercase tracking-[0.3em] text-sm">Present Location</span>
-                    </div>
                   ) : (
-                    <div className="flex-1 glass-panel border-white/5 py-6 text-center rounded-2xl flex items-center justify-center gap-4 opacity-40 grayscale">
-                      <Lock className="w-6 h-6" />
-                      <span className="font-bold uppercase tracking-[0.3em] text-sm">Path Obscured</span>
+                    <div className="col-span-full glass-panel border-white/5 py-8 text-center rounded-3xl flex items-center justify-center gap-5 opacity-40 grayscale">
+                      <Lock className="w-8 h-8" />
+                      <span className="font-black uppercase tracking-[0.4em] text-lg">Path Obscured</span>
                     </div>
                   )}
-                  <button onClick={() => setSelectedNode(null)} className="px-10 py-6 glass-panel border-white/10 hover:bg-white/5 text-[10px] uppercase font-bold tracking-[0.2em] rounded-2xl transition-all">Back</button>
+                  
+                  {/* Cancel Button */}
+                  {progress?.unlockedNodes.includes(selectedNode.id) && (
+                    <button 
+                      onClick={() => setSelectedNode(null)}
+                      className="col-span-full py-4 text-[9px] text-zinc-600 hover:text-white uppercase font-black tracking-widest transition-all"
+                    >
+                      Dismiss View
+                    </button>
+                  )}
                 </div>
               </motion.div>
             </motion.div>
           )}
 
-          {/* Story Event - Full Narrative Immersion */}
+
+          {/* Story Event - Narrative Immersion */}
           {activeEvent && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl">
-              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full max-w-4xl glass-panel p-16 text-center space-y-12 border-white/10 rounded-[4rem] bg-zinc-950/80 shadow-[0_0_150px_rgba(0,0,0,1)]">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-blue-500/10 blur-3xl rounded-full scale-150 animate-pulse" />
-                  <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-blue-600/20 to-zinc-950 border border-blue-500/30 flex items-center justify-center mx-auto relative z-10 shadow-2xl">
-                    <Book className="w-10 h-10 text-blue-400" />
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl">
+              <motion.div 
+                initial={{ y: 50, opacity: 0 }} 
+                animate={{ y: 0, opacity: 1 }} 
+                className="w-full max-w-4xl glass-panel p-10 md:p-20 text-center space-y-12 border-primary/30 rounded-[3rem] md:rounded-[4rem] bg-zinc-950/90 shadow-[0_0_150px_rgba(0,0,0,1)] relative overflow-hidden"
+              >
+                {/* Decorative Elements */}
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                <Book className="absolute -top-10 -right-10 w-48 h-48 text-primary/5 -rotate-12 pointer-events-none" />
+
+                <div className="space-y-8">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-20 h-20 rounded-[2rem] bg-primary/10 border border-primary/30 flex items-center justify-center shadow-2xl relative">
+                      <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
+                      <Book className="w-8 h-8 text-primary relative z-10" />
+                    </div>
+                    <span className="text-[10px] uppercase tracking-[0.6em] text-primary font-black">Interactive Chronicle</span>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h2 className="text-5xl md:text-7xl text-white font-serif italic drop-shadow-2xl">{activeEvent.title}</h2>
+                    <div className="h-px w-24 bg-primary/20 mx-auto" />
+                    <p className="text-xl md:text-2xl text-zinc-400 italic leading-relaxed max-w-2xl mx-auto font-serif bg-white/[0.02] p-8 rounded-3xl border border-white/5">
+                      "{activeEvent.description}"
+                    </p>
                   </div>
                 </div>
-                <div className="space-y-6">
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="h-px w-10 bg-blue-500/30" />
-                    <span className="text-[10px] uppercase tracking-[0.5em] text-blue-500 font-black">Story Progression</span>
-                    <div className="h-px w-10 bg-blue-500/30" />
-                  </div>
-                  <h2 className="text-6xl text-white font-serif italic">{activeEvent.title}</h2>
-                  <p className="text-2xl text-zinc-400 italic leading-relaxed max-w-2xl mx-auto font-serif">"{activeEvent.description}"</p>
-                </div>
-                <div className="grid grid-cols-1 gap-6 pt-10">
+
+                <div className="grid grid-cols-1 gap-4 pt-4">
+                  <p className="text-[9px] uppercase tracking-[0.4em] text-zinc-500 font-black mb-2">Choose Your Path</p>
                   {activeEvent.choices.map((choice: any) => (
                     <motion.button
                       key={choice.id}
-                      whileHover={choice.canDo ? { x: 15, scale: 1.01 } : {}}
+                      whileHover={choice.canDo ? { x: 10, scale: 1.01, backgroundColor: "rgba(255,255,255,0.03)" } : {}}
+                      whileTap={choice.canDo ? { scale: 0.99 } : {}}
                       disabled={!choice.canDo || isProcessing}
                       onClick={() => handleEventChoice(choice)}
                       className={cn(
-                        "p-8 border rounded-[2.5rem] flex justify-between items-center transition-all group relative overflow-hidden",
-                        choice.canDo ? "border-white/10 hover:border-blue-500/50 bg-black/40" : "border-white/5 opacity-30 grayscale cursor-not-allowed"
+                        "p-6 md:p-8 border rounded-[2rem] md:rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center gap-6 transition-all group relative overflow-hidden",
+                        choice.canDo ? "border-primary/20 hover:border-primary/60 bg-black/40 shadow-xl" : "border-white/5 opacity-40 grayscale cursor-not-allowed bg-zinc-900/40"
                       )}
                     >
-                      {choice.canDo && <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />}
-                      <div className="text-left relative z-10">
-                        <p className="text-white font-serif italic text-3xl group-hover:text-blue-400 transition-colors">{choice.label}</p>
-                        <div className="flex items-center gap-3 mt-3">
-                          <div className="p-1 rounded bg-blue-500/10 text-blue-400"><Sparkles className="w-3 h-3" /></div>
-                          <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">{choice.result}</p>
+                      {choice.canDo && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
+                      
+                      <div className="text-center md:text-left relative z-10 flex-1">
+                        <p className="text-white font-serif italic text-2xl md:text-3xl group-hover:text-primary transition-colors">{choice.label}</p>
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-4">
+                          <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
+                            <Sparkles className="w-3 h-3 text-primary" />
+                            <span className="text-[9px] text-primary uppercase font-black tracking-widest">Potential: {choice.result}</span>
+                          </div>
+                          {choice.success && (
+                            <div className="flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                               <Info className="w-3 h-3 text-zinc-400" />
+                               <span className="text-[9px] text-zinc-400 uppercase font-black tracking-widest italic">{choice.success}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-3 relative z-10">
-                        <span className="text-[9px] uppercase font-black tracking-[0.2em] text-blue-400 bg-blue-500/10 px-4 py-1.5 rounded-full border border-blue-500/20 shadow-inner">{choice.req}</span>
-                        {choice.canDo ? <Zap className="w-6 h-6 text-blue-500 fill-blue-500/20 animate-pulse" /> : <Lock className="w-6 h-6 text-zinc-700" />}
+
+                      <div className="flex items-center gap-6 relative z-10">
+                        <div className="flex flex-col items-center md:items-end gap-2">
+                           <span className={cn(
+                             "text-[9px] uppercase font-black tracking-[0.2em] px-5 py-2 rounded-full border shadow-inner",
+                             choice.canDo ? "bg-primary/10 border-primary/30 text-primary" : "bg-zinc-800 border-white/5 text-zinc-600"
+                           )}>
+                             {choice.req}
+                           </span>
+                           {choice.canDo ? (
+                             <div className="flex items-center gap-2 text-emerald-500/60 text-[8px] uppercase font-black">
+                               <CheckCircle2 className="w-3 h-3" /> Requirement Met
+                             </div>
+                           ) : (
+                             <div className="flex items-center gap-2 text-red-500/60 text-[8px] uppercase font-black">
+                               <Lock className="w-3 h-3" /> Locked
+                             </div>
+                           )}
+                        </div>
+                        <div className={cn(
+                          "w-14 h-14 rounded-2xl flex items-center justify-center border transition-all duration-500",
+                          choice.canDo ? "bg-primary/10 border-primary/30 text-primary group-hover:rotate-12 group-hover:scale-110 shadow-glow" : "bg-zinc-900 border-white/5 text-zinc-700"
+                        )}>
+                           {choice.canDo ? <ChevronRight className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
+                        </div>
                       </div>
                     </motion.button>
                   ))}
@@ -802,101 +1154,389 @@ export default function CampaignBoard() {
             </div>
           )}
 
+
           {/* Encounter - Battle Tension */}
           {activeEncounter && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl">
+            <div className="fixed inset-0 z-[70] flex items-center justify-center p-0 md:p-6 bg-black/98 backdrop-blur-3xl overflow-hidden">
               <motion.div 
-                initial={{ scale: 0.8, opacity: 0 }} 
+                initial={{ scale: 1.1, opacity: 0 }} 
                 animate={{ scale: 1, opacity: 1 }} 
-                className="w-full max-w-2xl glass-panel p-16 text-center space-y-12 border-red-900/40 rounded-[4rem] bg-zinc-950/80 shadow-[0_0_200px_rgba(139,17,17,0.4)]"
+                className="w-full h-full md:h-auto md:max-w-5xl glass-panel p-10 md:p-20 flex flex-col items-center justify-center space-y-12 border-red-900/20 bg-[#050505]/95 shadow-[0_0_200px_rgba(139,17,17,0.2)] relative"
               >
-                <div className="relative">
-                  <div className="absolute inset-0 bg-red-600/10 blur-3xl rounded-full scale-150 animate-pulse" />
-                  <div className="w-28 h-28 rounded-full bg-gradient-to-br from-red-900/40 to-black border-2 border-red-600/30 flex items-center justify-center mx-auto relative z-10 shadow-2xl">
-                     <Skull className="w-14 h-14 text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]" />
-                  </div>
+                {/* Battle Background Decor */}
+                <div className="absolute inset-0 opacity-10 pointer-events-none">
+                  <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-red-600/20 to-transparent" />
+                  <Skull className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] text-red-600/5 rotate-12" />
                 </div>
-                <div className="space-y-6">
-                  <div className="flex items-center justify-center gap-4">
-                    <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
-                    <span className="text-red-600 text-[10px] uppercase font-black tracking-[0.5em]">High Danger Zone</span>
-                    <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
-                  </div>
-                  <h2 className="text-6xl text-white font-serif italic">The {activeEncounter.name} Attacks</h2>
-                  <p className="text-xl text-zinc-400 italic leading-relaxed font-serif">"{activeEncounter.description}"</p>
-                </div>
-                
-                <div className="p-10 rounded-[2.5rem] bg-black/60 border border-white/5 space-y-6 shadow-inner">
-                  <div className="flex justify-between items-center">
+
+                {/* Combat HUD Header */}
+                <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                  <div className="flex flex-col items-center md:items-start gap-4">
                     <div className="flex items-center gap-3">
-                       <div className="w-3 h-3 rounded-sm bg-red-600 rotate-45" />
-                       <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">Threat Level</span>
+                      <div className="px-3 py-1 bg-red-600/10 border border-red-600/30 rounded text-[9px] font-black text-red-500 uppercase tracking-widest">
+                        {activeEncounter.isBoss ? "Critical Threat" : "Enemy Detected"}
+                      </div>
+                      <div className="h-px w-10 bg-red-900/30" />
+                      <div className="flex items-center gap-1">
+                        {[...Array(activeEncounter.threat)].map((_, i) => (
+                          <div key={i} className="w-2 h-4 bg-red-600 rounded-[1px] shadow-[0_0_8px_rgba(220,38,38,0.5)]" />
+                        ))}
+                      </div>
                     </div>
-                    <span className="text-red-500 font-serif italic text-3xl">{activeEncounter.health} Essence</span>
+                    <h2 className={cn(
+                      "text-6xl md:text-8xl font-serif italic tracking-tighter leading-none",
+                      activeEncounter.isBoss ? "gold-gradient-text" : "text-white"
+                    )}>
+                      {activeEncounter.name}
+                    </h2>
+                    {activeEncounter.title && (
+                      <p className="text-primary uppercase font-black tracking-[0.5em] text-[10px]">{activeEncounter.title}</p>
+                    )}
                   </div>
-                  <div className="w-full h-4 bg-zinc-900 rounded-full overflow-hidden border border-white/5 p-1">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: "100%" }}
-                      transition={{ duration: 1.5, ease: "circOut" }}
-                      className="h-full bg-gradient-to-r from-red-950 via-red-600 to-red-400 rounded-full shadow-[0_0_20px_rgba(139,17,17,0.8)]" 
-                    />
+
+                  {/* Enemy Health / Stats */}
+                  <div className="flex flex-col items-center md:items-end gap-3">
+                    <div className="flex gap-2">
+                       {[...Array(activeEncounter.health)].map((_, i) => (
+                         <motion.div 
+                           key={i}
+                           initial={{ scale: 0 }}
+                           animate={{ scale: 1 }}
+                           transition={{ delay: i * 0.1 }}
+                           className="w-8 h-8 rounded-lg bg-red-600/20 border border-red-600/40 flex items-center justify-center shadow-glow"
+                         >
+                           <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                         </motion.div>
+                       ))}
+                    </div>
+                    <p className="text-[10px] text-red-500/60 uppercase font-black tracking-widest">Vitality Protocol: {activeEncounter.health} Units</p>
                   </div>
                 </div>
 
+                {/* Encounter Main Body */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 w-full relative z-10">
+                  <div className="space-y-8">
+                    <div className="p-8 rounded-[2.5rem] bg-black/60 border border-white/5 relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent opacity-40" />
+                      <p className="relative z-10 text-xl md:text-2xl text-zinc-400 italic leading-relaxed font-serif">
+                        "{activeEncounter.description}"
+                      </p>
+                    </div>
+
+                    {activeEncounter.weakness && (
+                      <div className="flex items-center gap-4 p-5 rounded-2xl bg-blue-950/10 border border-blue-900/20 text-blue-400">
+                        <Zap className="w-5 h-5 animate-pulse" />
+                        <div>
+                          <p className="text-[8px] uppercase font-black tracking-widest opacity-60">Scanned Weakness</p>
+                          <p className="text-xs font-serif italic">{activeEncounter.weakness}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeEncounter.phases && (
+                      <div className="space-y-3">
+                        <p className="text-[8px] uppercase font-black tracking-widest text-zinc-500">Boss Phases</p>
+                        {activeEncounter.phases.map((phase: any) => (
+                          <div key={phase.id} className="flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
+                             <span className="text-[10px] font-black text-primary">{phase.id}</span>
+                             <div className="flex-1">
+                               <p className="text-xs text-white font-serif italic">{phase.name}</p>
+                               <p className="text-[8px] text-zinc-500 uppercase font-bold">{phase.requirement}</p>
+                             </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions & Rewards Preview */}
+                  <div className="flex flex-col gap-4">
+                    <p className="text-[9px] uppercase tracking-[0.4em] text-zinc-500 font-black mb-2">Combat Protocol</p>
+                    {activeEncounter.responses?.map((resp: any) => (
+                      <motion.button
+                        key={resp.id}
+                        whileHover={{ scale: 1.02, backgroundColor: "rgba(139, 17, 17, 0.1)", borderColor: "rgba(220, 38, 38, 0.5)" }}
+                        whileTap={{ scale: 0.98 }}
+                        disabled={isProcessing}
+                        onClick={() => handleEncounterResolve()}
+                        className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] flex items-center justify-between group transition-all"
+                      >
+                        <div className="flex items-center gap-6">
+                           <div className="w-12 h-12 rounded-2xl bg-zinc-900 flex items-center justify-center border border-white/10 group-hover:border-red-600/50 group-hover:text-red-500 transition-all">
+                             {resp.action === "attack" ? <Sword className="w-5 h-5" /> : 
+                              resp.action === "disable" ? <Zap className="w-5 h-5" /> :
+                              <Shield className="w-5 h-5" />}
+                           </div>
+                           <div className="text-left">
+                             <p className="text-white font-serif italic text-xl group-hover:text-red-500 transition-colors">{resp.label}</p>
+                             <p className="text-[8px] uppercase tracking-widest text-zinc-500">Initiate {resp.action} sequence</p>
+                           </div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-zinc-700 group-hover:text-red-500 transition-colors" />
+                      </motion.button>
+                    )) || (
+                      <motion.button 
+                        whileHover={{ scale: 1.02, boxShadow: "0 0 50px rgba(139, 17, 17, 0.4)" }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleEncounterResolve()}
+                        disabled={isProcessing}
+                        className="premium-button premium-button-red py-8 text-2xl flex items-center justify-center gap-6 rounded-[2.5rem]"
+                      >
+                        <Sword className="w-8 h-8" /> Engage Threat
+                      </motion.button>
+                    )}
+
+                    <div className="mt-8 p-6 rounded-3xl border border-white/5 bg-black/40 relative group/spoils">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-[9px] uppercase font-black tracking-widest text-zinc-500">Victory Spoils</span>
+                        <div className="h-px flex-1 bg-white/5 mx-4" />
+                        <div className="group/help relative">
+                          <Info className="w-3 h-3 text-zinc-700 cursor-help" />
+                          <div className="absolute bottom-full right-0 mb-2 w-48 opacity-0 group-hover/help:opacity-100 pointer-events-none transition-all z-50">
+                            <div className="glass-panel p-3 rounded-xl border-white/10 bg-black/90 backdrop-blur-3xl text-[9px] text-zinc-400 font-serif italic leading-relaxed shadow-2xl">
+                              Treasures earned upon a successful resolution. Failure provides no spoils.
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        {activeEncounter.rewards?.shards && (
+                          <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 rounded-full border border-amber-500/20 text-amber-500 text-[9px] font-black">
+                            +{activeEncounter.rewards.shards} SHARDS
+                          </div>
+                        )}
+                        {activeEncounter.rewards?.cardId && (
+                          <div className="flex items-center gap-2 px-3 py-1 bg-purple-500/10 rounded-full border border-purple-500/20 text-purple-400 text-[9px] font-black">
+                            LEGENDARY RELIC
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Warning */}
+                <p className="text-[8px] uppercase tracking-[0.8em] text-red-600/40 font-black relative z-10 animate-pulse">
+                  Unauthorized Personnel detected in Restricted Maw Sector
+                </p>
+              </motion.div>
+            </div>
+          )}
+
+
+          {/* Reward Modal - Cinematic Loot Reveal */}
+          {activeReward && (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl">
+              <motion.div 
+                initial={{ y: 100, opacity: 0, scale: 0.8 }} 
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                className="w-full max-w-xl glass-panel p-10 md:p-20 text-center space-y-10 border-primary/30 rounded-[3rem] md:rounded-[4rem] bg-zinc-950/90 shadow-[0_0_150px_rgba(200,155,44,0.1)] relative overflow-hidden"
+              >
+                {/* Shine Animation */}
+                <motion.div 
+                  animate={{ x: ["-100%", "100%"] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent skew-x-12 pointer-events-none"
+                />
+
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full scale-150" />
+                  <div className="w-32 h-40 rounded-2xl bg-gradient-to-br from-primary/30 to-zinc-950 border border-primary/40 flex flex-col items-center justify-center mx-auto relative z-10 shadow-3xl">
+                     {activeReward.type === 'card' || activeReward.type === 'ally' ? (
+                        <div className="space-y-2">
+                           <div className="w-16 h-20 border border-primary/50 rounded-lg flex items-center justify-center bg-primary/5">
+                              <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+                           </div>
+                           <p className="text-[8px] text-primary uppercase font-black">Vault Asset</p>
+                        </div>
+                     ) : (
+                       <CheckCircle2 className="w-16 h-16 text-primary drop-shadow-[0_0_20px_rgba(200,155,44,0.6)]" />
+                     )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="h-px w-8 bg-primary/20" />
+                    <span className="text-[10px] uppercase font-black tracking-[0.6em] text-primary">Discovery Confirmed</span>
+                    <div className="h-px w-8 bg-primary/20" />
+                  </div>
+                  <h3 className="text-5xl text-white font-serif italic leading-tight">{activeReward.name}</h3>
+                  <p className="text-xl text-zinc-400 italic leading-relaxed font-serif max-w-sm mx-auto p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+                    "{activeReward.description || `The path rewards those who dare to walk its scorched length.`}"
+                  </p>
+                  
+                  {(activeReward.type === 'card' || activeReward.type === 'ally') && (
+                    <div className="flex items-center justify-center gap-3 py-4 group/vault relative cursor-help">
+                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                       <span className="text-[9px] text-emerald-500 uppercase font-black tracking-widest">Recorded in your Vault</span>
+                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 opacity-0 group-hover/vault:opacity-100 pointer-events-none transition-all z-50">
+                         <div className="glass-panel p-3 rounded-xl border-white/10 bg-black/90 backdrop-blur-3xl text-[9px] text-zinc-400 font-serif italic leading-relaxed shadow-2xl">
+                           This artifact has been secured in your collectible vault. It can be viewed, traded, or sold when eligible.
+                         </div>
+                       </div>
+                    </div>
+                  )}
+                </div>
+
                 <motion.button 
-                  whileHover={{ scale: 1.05, boxShadow: "0 0 50px rgba(139, 17, 17, 0.4)" }}
+                  whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={handleEncounterResolve}
-                  disabled={isProcessing}
-                  className="w-full premium-button h-24 text-3xl flex items-center justify-center gap-6 bg-gradient-to-r from-red-950 to-red-700 border-none group"
+                  onClick={() => setActiveReward(null)}
+                  className="w-full premium-button premium-button-gold py-6 text-xl shadow-[0_20px_50px_rgba(200,155,44,0.2)] rounded-3xl"
                 >
-                  <Sword className="w-10 h-10 group-hover:rotate-12 transition-transform" /> 
-                  <span>Exterminate Threat</span>
+                  Confirm Discovery
                 </motion.button>
               </motion.div>
             </div>
           )}
 
-          {/* Reward Modal - Cinematic Loot Reveal */}
-          {activeReward && (
-            <div className="fixed inset-0 z-[70] flex items-center justify-center p-6 bg-black/90 backdrop-blur-3xl">
+          {/* Quest Completion Modal - Dramatic Achievement */}
+          {questComplete && (
+            <div className="fixed inset-0 z-[90] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl">
               <motion.div 
-                initial={{ y: 100, opacity: 0, scale: 0.8 }} 
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                className="w-full max-w-xl glass-panel p-20 text-center space-y-10 border-amber-500/30 rounded-[4rem] bg-zinc-950/80 shadow-[0_0_200px_rgba(245,158,11,0.2)]"
+                initial={{ scale: 0.5, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-full max-w-2xl glass-panel p-12 md:p-24 text-center space-y-12 border-primary/40 bg-zinc-950/95 shadow-[0_0_200px_rgba(200,155,44,0.3)] relative overflow-hidden"
               >
-                <div className="relative">
-                  <div className="absolute inset-0 bg-amber-500/20 blur-[80px] rounded-full scale-150" />
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-[-40px] border-2 border-dashed border-amber-500/20 rounded-full"
-                  />
-                  <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-amber-600/30 to-zinc-950 border border-amber-500/40 flex items-center justify-center mx-auto relative z-10 shadow-3xl">
-                     <CheckCircle2 className="w-16 h-16 text-amber-500 drop-shadow-glow" />
+                {/* Victory Burst Decor */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[60rem] bg-radial-vignette opacity-20 rotate-45 pointer-events-none" />
+                
+                <div className="relative space-y-10">
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="w-24 h-24 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center relative">
+                      <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 animate-pulse" />
+                      <Trophy className="w-10 h-10 text-primary relative z-10" />
+                    </div>
+                    <span className="text-[12px] uppercase tracking-[0.8em] text-primary font-black">Quest Fulfilled</span>
                   </div>
+
+                  <div className="space-y-4">
+                    <h2 className="text-6xl md:text-8xl text-white font-serif italic drop-shadow-2xl">{questComplete.title}</h2>
+                    <p className="text-xl md:text-2xl text-zinc-400 italic leading-relaxed max-w-lg mx-auto font-serif">
+                      {questComplete.description}
+                    </p>
+                  </div>
+
+                  <div className="p-10 rounded-[3rem] bg-black/60 border border-primary/20 relative group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-6">Legendary Reward Granted</p>
+                    <div className="flex items-center justify-center gap-8">
+                       <div className="w-24 h-32 rounded-xl bg-zinc-900 border border-primary/40 flex items-center justify-center shadow-glow">
+                          <Sparkles className="w-10 h-10 text-primary" />
+                       </div>
+                       <div className="text-left">
+                          <p className="text-white font-serif italic text-3xl">{questComplete.rewardName}</p>
+                          <p className="text-[9px] text-primary uppercase font-black tracking-widest mt-1">Founders Edition Card</p>
+                       </div>
+                    </div>
+                  </div>
+
+                  <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setQuestComplete(null)}
+                    className="w-full premium-button premium-button-gold py-8 text-2xl rounded-[2.5rem] shadow-[0_30px_60px_rgba(200,155,44,0.3)]"
+                  >
+                    Continue the Journey
+                  </motion.button>
                 </div>
-                <div className="space-y-4">
-                  <span className="text-[10px] uppercase font-black tracking-[0.6em] text-amber-500 block">Tribute Reclaimed</span>
-                  <h3 className="text-5xl text-white font-serif italic leading-tight">{activeReward.name}</h3>
-                  <div className="h-px w-20 bg-amber-500/30 mx-auto my-6" />
-                  <p className="text-xl text-zinc-400 italic leading-relaxed font-serif max-w-sm mx-auto">
-                    "{activeReward.description || `The path rewards those who dare to walk its scorched length.`}"
-                  </p>
-                </div>
-                <motion.button 
-                  whileHover={{ scale: 1.05, y: -5 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setActiveReward(null)}
-                  className="w-full premium-button py-6 text-xl shadow-[0_20px_50px_rgba(245,158,11,0.1)]"
-                >
-                  Confirm and Advance
-                </motion.button>
               </motion.div>
             </div>
           )}
         </AnimatePresence>
+        
+        {/* Map Legend Modal */}
+        <AnimatePresence>
+          {isLegendOpen && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsLegendOpen(false)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-xl"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-lg glass-panel rounded-[2.5rem] border-white/10 bg-black/80 shadow-2xl overflow-hidden p-10"
+              >
+                <button 
+                  onClick={() => setIsLegendOpen(false)}
+                  className="absolute top-8 right-8 p-2 text-zinc-500 hover:text-white transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+
+                <div className="space-y-8">
+                  <div className="space-y-2">
+                    <h2 className="text-3xl font-serif italic gold-gradient-text">Map Legend</h2>
+                    <p className="text-xs text-zinc-500 font-serif italic">Decipher the signs of the Yellow Path.</p>
+                  </div>
+
+                  <div className="space-y-6">
+                    {[
+                      { icon: <Lock className="w-4 h-4 text-zinc-600" />, label: "Locked Nodes", desc: "Locked paths require keys, stats, or completed story events." },
+                      { icon: <Search className="w-4 h-4 text-primary" />, label: "Search Nodes", desc: "Search nodes may reveal keys, cards, shards, or fragments." },
+                      { icon: <Book className="w-4 h-4 text-emerald-500" />, label: "Story Nodes", desc: "Story choices can unlock allies, rewards, or consequences." },
+                      { icon: <Skull className="w-4 h-4 text-red-500" />, label: "Boss Nodes", desc: "Boss encounters require preparation and support." },
+                      { icon: <Zap className="w-4 h-4 text-amber-500" />, label: "Action Points", desc: "AP is spent to move, search, and interact. End your turn to refresh." },
+                    ].map((item, i) => (
+                      <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                        <div className="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center border border-white/5 shrink-0">
+                          {item.icon}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] uppercase tracking-widest font-black text-white">{item.label}</p>
+                          <p className="text-[11px] text-zinc-500 font-serif italic leading-relaxed">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button 
+                    onClick={() => setIsLegendOpen(false)}
+                    className="premium-button w-full py-4 text-[10px] uppercase tracking-widest font-black"
+                  >
+                    Return to the Path
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Floating Toasts */}
+        <div className="fixed bottom-32 right-10 z-[100] flex flex-col gap-4 pointer-events-none">
+          <AnimatePresence>
+            {toasts.map((toast) => (
+              <motion.div
+                key={toast.id}
+                initial={{ opacity: 0, x: 50, scale: 0.9 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                className={cn(
+                  "px-8 py-4 rounded-2xl border-l-4 backdrop-blur-2xl shadow-2xl pointer-events-auto flex items-center gap-5 bg-black/80",
+                  toast.type === 'success' ? "border-emerald-500 text-emerald-400" :
+                  toast.type === 'error' ? "border-red-500 text-red-400" :
+                  "border-primary text-primary"
+                )}
+              >
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center border",
+                  toast.type === 'success' ? "bg-emerald-500/10 border-emerald-500/30" :
+                  toast.type === 'error' ? "bg-red-500/10 border-red-500/30" :
+                  "bg-primary/10 border-primary/30"
+                )}>
+                  {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Info className="w-4 h-4" />}
+                </div>
+                <span className="text-[11px] uppercase font-black tracking-widest leading-none">{toast.message}</span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
         <BetaNotice />
       </div>
     </MainLayout>

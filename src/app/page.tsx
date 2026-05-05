@@ -75,66 +75,66 @@ export default function LandingPage() {
       {/* Cinematic Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center pt-20">
         {/* Background Layers */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 overflow-hidden">
           <motion.div 
-            initial={{ scale: 1.1, opacity: 0 }}
-            animate={{ scale: 1, opacity: 0.6 }}
-            transition={{ duration: 2 }}
-            className="w-full h-full"
+            initial={{ scale: 1.2, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.7 }}
+            transition={{ duration: 3, ease: "easeOut" }}
+            className="w-full h-full relative"
           >
             <img 
               alt="Horror of Oz Background" 
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-cover grayscale-[0.2] brightness-[0.4]" 
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuAi44PQ9kzwTJERp0H0hZLb3h1wy_7uBTlixFYERq7UlBBGYZQZvHytLBmMAp54nWMzr2GgsiUntxPQDhn35VaylIP0rBOePcMY8Uhak12H7doRUgmHfRHREbjll4Odx9VUIe4qGpVk1pBGJjC2NKpPH8Jvv3KdNIF1l2pKI7Jsmjn206sx1LDrOO6E12xCh4mduZGs8tFU6NlDP6ryxRUP4jx-2wmJucHrgm1JPb6kJfQxdomR0j60WnvUijKcW0YBNPnnMmI82AZF"
             />
+            <div className="vignette-overlay opacity-80"></div>
           </motion.div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_0%,_#000_80%)]"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_0%,_#000_100%)] opacity-90"></div>
           
           {/* Animated Light Sources */}
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/10 blur-[120px] rounded-full animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-900/20 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-amber-500/10 blur-[150px] rounded-full animate-pulse opacity-40" />
+          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-red-900/10 blur-[150px] rounded-full animate-pulse opacity-40" style={{ animationDelay: '2s' }} />
         </div>
         
-        <div className="relative z-10 text-center px-6 max-w-6xl mx-auto">
+        <div className="relative z-10 text-center px-6 max-w-7xl mx-auto py-20">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="space-y-6"
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="space-y-8"
           >
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="h-px w-8 bg-amber-500/40" />
-              <span className="text-[10px] uppercase tracking-[0.5em] text-amber-500 font-bold">
+            <div className="flex items-center justify-center gap-4 mb-2">
+              <div className="h-px w-12 bg-amber-500/30" />
+              <span className="text-[10px] uppercase tracking-[0.8em] text-amber-500/80 font-bold drop-shadow-sm">
                 The Yellow Path Awaits
               </span>
-              <div className="h-px w-8 bg-amber-500/40" />
+              <div className="h-px w-12 bg-amber-500/30" />
             </div>
-
-            <h1 className="text-7xl md:text-9xl lg:text-[10rem] font-serif italic font-bold tracking-tighter leading-[0.85]">
-              <span className="block text-white opacity-90 drop-shadow-2xl">Enter the</span>
-              <span className="block gold-gradient-text drop-shadow-[0_0_50px_rgba(200,155,44,0.3)]">Horror of Oz</span>
+ 
+            <h1 className="text-7xl md:text-9xl lg:text-[11rem] font-serif italic font-bold tracking-tighter leading-[0.8] mb-4">
+              <span className="block text-white opacity-95 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]">Enter the</span>
+              <span className="block gold-gradient-text drop-shadow-[0_0_80px_rgba(200,155,44,0.4)] py-2">Horror of Oz</span>
             </h1>
-
-            <p className="text-lg md:text-xl text-zinc-400 max-w-3xl mx-auto font-serif italic leading-relaxed pt-4">
+ 
+            <p className="text-xl md:text-2xl text-zinc-400 max-w-3xl mx-auto font-serif italic leading-relaxed pt-6 opacity-80">
               A dark fantasy collectible card universe and interactive storybook. <br className="hidden md:block" />
               Collect the legends. Walk the path. Survive the nightmare.
             </p>
           </motion.div>
           
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-6 justify-center items-center mt-12"
+            transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
+            className="flex flex-col sm:flex-row gap-8 justify-center items-center mt-16"
           >
-            <Link href="/signup" className="premium-button group px-12 py-5 text-sm flex items-center justify-center gap-3">
-              <span>Start Your Journey</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <Link href="/signup" className="premium-button premium-button-gold group px-16 py-6 text-sm flex items-center justify-center gap-3 min-w-[240px]">
+              <span className="font-bold tracking-[0.2em]">Start Your Journey</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
             </Link>
-            <Link href="/campaign" className="glass-panel hover:bg-white/5 px-12 py-5 text-sm flex items-center justify-center gap-3 text-zinc-400 hover:text-white transition-all border-white/10">
-              <Skull className="w-4 h-4" />
-              <span>Enter Red Country</span>
+            <Link href="/campaign" className="premium-button premium-button-dark group px-16 py-6 text-sm flex items-center justify-center gap-3 min-w-[240px]">
+              <Skull className="w-5 h-5 text-secondary transition-transform group-hover:scale-125" />
+              <span className="font-bold tracking-[0.2em] text-zinc-300 group-hover:text-white">Enter Red Country</span>
             </Link>
           </motion.div>
 
@@ -184,47 +184,52 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
           {features.map((feature, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1, duration: 0.6 }}
-              viewport={{ once: true, margin: "-100px" }}
-              className="group h-full"
+              transition={{ delay: idx * 0.15, duration: 0.8 }}
+              viewport={{ once: true, margin: "-50px" }}
+              className="group h-full flex flex-col"
             >
               <div className={cn(
-                "glass-panel p-8 md:p-12 relative flex flex-col h-full min-h-[340px] transition-all duration-500 hover:border-amber-500/30 group-hover:-translate-y-2 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]",
-                "bg-gradient-to-br overflow-hidden rounded-[2rem]", 
+                "gothic-panel p-10 md:p-14 relative flex flex-col flex-1 min-h-[400px] transition-all duration-700 hover:border-primary/40 hover:shadow-[0_30px_70px_rgba(0,0,0,0.8),0_0_30px_rgba(200,155,44,0.1)]",
+                "bg-gradient-to-br overflow-hidden rounded-[2.5rem] border-white/5", 
                 feature.color
               )}>
                 {/* Decorative background element */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/2 opacity-[0.02] blur-3xl rounded-full -mr-16 -mt-16" />
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 opacity-[0.03] blur-3xl rounded-full -mr-24 -mt-24 group-hover:bg-primary/20 transition-all duration-700" />
                 
                 {/* Top Row: Icon and Badge */}
-                <div className="flex justify-between items-start mb-10 relative z-10">
-                  <div className="w-16 h-16 rounded-2xl bg-black/60 border border-white/5 flex items-center justify-center group-hover:scale-110 group-hover:border-amber-500/20 transition-all duration-500 shadow-2xl">
-                    {feature.icon}
+                <div className="flex flex-wrap items-center justify-between gap-6 mb-12 relative z-10">
+                  <div className="w-20 h-20 rounded-3xl bg-black/80 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:border-primary/30 transition-all duration-700 shadow-2xl backdrop-blur-xl">
+                    {/* Scaling the icon slightly on hover */}
+                    <div className="group-hover:scale-110 transition-transform duration-500">
+                      {feature.icon}
+                    </div>
                   </div>
-                  <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-zinc-500 px-4 py-2 bg-white/5 rounded-full border border-white/5 backdrop-blur-md">
+                  <span className="text-[10px] uppercase tracking-[0.5em] font-black text-zinc-500 px-6 py-3 bg-black/40 rounded-full border border-white/5 backdrop-blur-2xl shadow-inner group-hover:text-primary transition-colors duration-500">
                     {feature.badge}
                   </span>
                 </div>
 
                 {/* Content Container */}
-                <div className="space-y-6 relative z-10">
-                  <h3 className="text-3xl md:text-4xl font-serif italic text-white group-hover:gold-gradient-text transition-all duration-300 leading-tight">
+                <div className="space-y-8 relative z-10 flex-1">
+                  <h3 className="text-4xl md:text-5xl font-serif italic text-white group-hover:gold-gradient-text transition-all duration-500 leading-[1.1] tracking-tight">
                     {feature.title}
                   </h3>
-                  <p className="text-zinc-400 text-lg leading-relaxed font-serif italic max-w-sm">
+                  <div className="h-px w-16 bg-white/10 group-hover:w-24 group-hover:bg-primary/30 transition-all duration-700" />
+                  <p className="text-zinc-400 text-xl leading-relaxed font-serif italic max-w-sm group-hover:text-zinc-200 transition-colors duration-500">
                     {feature.description}
                   </p>
                 </div>
 
                 {/* Hover Action */}
-                <div className="mt-auto pt-10 flex items-center gap-3 text-amber-500/60 text-[11px] uppercase tracking-[0.3em] font-bold opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 relative z-10">
-                  Explore Feature <ArrowRight className="w-4 h-4" />
+                <div className="mt-12 pt-8 flex items-center gap-4 text-amber-500/40 text-[11px] uppercase tracking-[0.4em] font-black opacity-40 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0 relative z-10">
+                  <div className="w-8 h-px bg-current" />
+                  Explore Feature <ArrowRight className="w-5 h-5 group-hover:translate-x-3 transition-transform" />
                 </div>
               </div>
             </motion.div>

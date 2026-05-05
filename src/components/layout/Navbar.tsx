@@ -23,7 +23,7 @@ export function Navbar() {
   const isAdmin = profile?.role === "admin" || profile?.role === "owner";
 
   const navLinks = [
-    { name: "Dashboard", href: "/dashboard" },
+    { name: "Journal", href: "/journal" },
     { name: "Campaign", href: "/campaign" },
     { name: "Vault", href: "/cards" },
     { name: "Library", href: "/library" },

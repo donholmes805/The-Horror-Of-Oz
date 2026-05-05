@@ -1,7 +1,15 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { BetaNotice } from "@/components/shared/BetaNotice";
+import { OnboardingModal } from "@/components/shared/OnboardingModal";
+import { cn } from "@/lib/utils";
 import { 
   Trophy, 
   Coins, 
@@ -23,15 +31,12 @@ import {
   Flame,
   Sparkles,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  History,
+  ChevronDown,
+  HelpCircle,
+  CheckCircle2
 } from "lucide-react";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { BetaNotice } from "@/components/shared/BetaNotice";
-import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -39,6 +44,17 @@ export default function Dashboard() {
   const [loadingProgress, setLoadingProgress] = useState(true);
   const [isClaiming, setIsClaiming] = useState(false);
   const [announcement, setAnnouncement] = useState<string>("");
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [openHelp, setOpenHelp] = useState<string | null>(null);
+
+  const handleCloseOnboarding = async () => {
+    setShowOnboarding(false);
+    if (user && !progress?.seenOnboarding) {
+      await updateDoc(doc(db, "playerProgress", user.uid), {
+        seenOnboarding: true
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -66,7 +82,11 @@ export default function Dashboard() {
 
     const unsub = onSnapshot(doc(db, "playerProgress", user.uid), 
       (snap) => {
-        setProgress(snap.data());
+        const data = snap.data();
+        setProgress(data);
+        if (data && !data.seenOnboarding) {
+          setShowOnboarding(true);
+        }
         setLoadingProgress(false);
         clearTimeout(timeout);
       },
@@ -174,8 +194,11 @@ export default function Dashboard() {
                 <div className="h-px w-12 bg-amber-500/30" />
                 <span className="text-[10px] uppercase tracking-[0.4em] text-amber-500/60 font-bold">Chronicles Dashboard</span>
               </div>
-              <h1 className="text-4xl md:text-6xl font-serif italic text-white">
+              <h1 className="text-4xl md:text-6xl font-serif italic text-white flex flex-col md:flex-row md:items-center gap-4">
                 The Path Awaits, <span className="gold-gradient-text">{profile?.username || "Pathwalker"}</span>
+                <Link href="/journal" className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[9px] uppercase tracking-widest font-black text-zinc-500 hover:text-white hover:border-primary/30 transition-all">
+                  <History className="w-3 h-3 text-primary" /> View Journal
+                </Link>
               </h1>
             </div>
             
@@ -213,6 +236,48 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Help & Guidance Section */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-3 px-4">
+            <HelpCircle className="w-4 h-4 text-primary/60" />
+            <h2 className="text-[10px] uppercase tracking-[0.4em] font-black text-primary/60">Pathwalker Guidance</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { id: "shards", q: "What are Yellow Shards?", a: "Yellow Shards are the primary currency of Oz. Use them in the Bazaar to acquire artifacts from other Pathwalkers. During beta, shards are earned through campaign searches and rewards." },
+              { id: "first-card", q: "How do I earn my first card?", a: "Artifacts are earned through survival. Complete the 'First Step on the Yellow Path' quest in the campaign to claim your first Legendary relic." },
+              { id: "locked", q: "Why is my card locked?", a: "Starter artifacts have a 14-day trade lock and a 90-day sale lock. Some artifacts are Soulbound and can never be traded. Cards active in a campaign session are also temporarily locked." },
+              { id: "membership", q: "What does Paid Member unlock?", a: "Paid membership grants full access to the Forbidden Library—read every chapter, listen to the complete audiobook archive, and earn unique reader rewards." },
+              { id: "library", q: "What is the Forbidden Library?", a: "The Library contains the true chronicles of Oz. It is where you can read the lore, listen to the whispers of the storm, and continue the story beyond the board." },
+            ].map((help) => (
+              <div key={help.id} className="glass-panel rounded-2xl border-white/5 bg-black/40 overflow-hidden transition-all">
+                <button 
+                  onClick={() => setOpenHelp(openHelp === help.id ? null : help.id)}
+                  className="w-full p-5 flex items-center justify-between group"
+                >
+                  <span className="text-xs font-serif italic text-zinc-400 group-hover:text-white transition-colors">{help.q}</span>
+                  <ChevronDown className={cn("w-4 h-4 text-zinc-600 transition-transform duration-500", openHelp === help.id && "rotate-180 text-primary")} />
+                </button>
+                <AnimatePresence>
+                  {openHelp === help.id && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 pb-5 pt-1 text-[11px] text-zinc-500 font-serif italic leading-relaxed border-t border-white/5 bg-zinc-950/20">
+                        {help.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Main Content Area */}
@@ -464,6 +529,7 @@ export default function Dashboard() {
         </div>
       </div>
       <BetaNotice />
+      <OnboardingModal isOpen={showOnboarding} onClose={handleCloseOnboarding} />
     </MainLayout>
   );
 }

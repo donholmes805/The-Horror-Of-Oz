@@ -40,6 +40,9 @@ export async function POST(req: Request) {
         const userId = stripeSub.metadata?.userId || session.metadata?.userId;
 
         if (userId) {
+          const userDoc = await adminDb.collection("users").doc(userId).get();
+          const userData = userDoc.data();
+
           await adminDb.collection("users").doc(userId).update({
             membershipStatus: "paid",
             stripeSubscriptionId: subscriptionId,
@@ -48,6 +51,40 @@ export async function POST(req: Request) {
             billingStatus: "active",
             updatedAt: new Date(),
           });
+
+          // Handle Affiliate Commission
+          if (userData?.referredByAffiliateCode && !userData.affiliateCommissionProcessed) {
+             const affQuery = await adminDb.collection("affiliates")
+               .where("referralCode", "==", userData.referredByAffiliateCode)
+               .where("status", "==", "approved")
+               .limit(1)
+               .get();
+
+             if (!affQuery.empty) {
+                const affiliate = affQuery.docs[0].data();
+                const amount = session.amount_total || 0;
+                const commissionAmount = Math.floor(amount * 0.20); // 20% commission
+
+                if (commissionAmount > 0) {
+                   await adminDb.collection("affiliateCommissions").add({
+                      affiliateUserId: affiliate.userId,
+                      referredUserId: userId,
+                      sourceEvent: event.type,
+                      stripeCheckoutSessionId: session.id,
+                      grossAmount: amount / 100, // in dollars
+                      commissionRate: 0.20,
+                      commissionAmount: commissionAmount / 100, // in dollars
+                      status: "pending",
+                      createdAt: new Date(),
+                   });
+
+                   await adminDb.collection("users").doc(userId).update({
+                      affiliateCommissionProcessed: true,
+                      referredByUserId: affiliate.userId
+                   });
+                }
+             }
+          }
         }
       }
       break;
