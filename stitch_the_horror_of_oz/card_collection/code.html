@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Yellow Path Chronicles | Card Collection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Inter:wght@100..900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+    }
+    .gothic-panel {
+      background: linear-gradient(145deg, #1c1b1b 0%, #0e0e0e 100%);
+      border: 1px solid rgba(184, 134, 11, 0.2);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+    }
+    .card-border-gold {
+      border: 1px solid #b8860b;
+      box-shadow: 0 0 15px rgba(184, 134, 11, 0.3), inset 0 0 10px rgba(184, 134, 11, 0.1);
+    }
+    .card-border-red {
+      border: 1px solid #8b0000;
+      box-shadow: 0 0 15px rgba(139, 0, 0, 0.3), inset 0 0 10px rgba(139, 0, 0, 0.1);
+    }
+    .vignette {
+      box-shadow: inset 0 0 150px 50px #000000;
+    }
+    .yellow-path-progress {
+      background: linear-gradient(90deg, #b8860b 0%, #ffcc00 100%);
+      box-shadow: 0 0 8px #b8860b;
+    }
+  </style>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "secondary-fixed-dim": "#c8c6c5",
+                  "surface-container-highest": "#353434",
+                  "on-primary-container": "#7b7979",
+                  "inverse-on-surface": "#313030",
+                  "surface-variant": "#353434",
+                  "surface-container-lowest": "#0e0e0e",
+                  "background": "#141313",
+                  "on-background": "#e5e2e1",
+                  "secondary": "#c8c6c5",
+                  "surface-container": "#201f1f",
+                  "on-secondary-fixed": "#1b1c1c",
+                  "on-tertiary-container": "#7c7977",
+                  "primary-fixed": "#e5e2e1",
+                  "tertiary-container": "#0b0a09",
+                  "tertiary-fixed-dim": "#cac6c3",
+                  "surface-bright": "#3a3939",
+                  "on-secondary-fixed-variant": "#474747",
+                  "on-tertiary": "#32302f",
+                  "surface": "#141313",
+                  "on-secondary": "#303030",
+                  "on-surface-variant": "#c4c7c7",
+                  "surface-container-high": "#2b2a2a",
+                  "inverse-surface": "#e5e2e1",
+                  "on-secondary-container": "#b6b5b4",
+                  "on-error": "#690005",
+                  "on-tertiary-fixed": "#1d1b1a",
+                  "on-tertiary-fixed-variant": "#484645",
+                  "on-surface": "#e5e2e1",
+                  "surface-tint": "#c9c6c5",
+                  "outline": "#8e9192",
+                  "outline-variant": "#444748",
+                  "secondary-container": "#474747",
+                  "surface-dim": "#141313",
+                  "inverse-primary": "#5f5e5e",
+                  "error-container": "#93000a",
+                  "on-primary-fixed-variant": "#474646",
+                  "secondary-fixed": "#e4e2e1",
+                  "surface-container-low": "#1c1b1b",
+                  "on-primary-fixed": "#1c1b1b",
+                  "primary-fixed-dim": "#c9c6c5",
+                  "error": "#ffb4ab",
+                  "on-error-container": "#ffdad6",
+                  "primary": "#c9c6c5",
+                  "tertiary": "#cac6c3",
+                  "primary-container": "#0a0a0a"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "fontFamily": {
+                  "display-lg": ["Newsreader"],
+                  "label-sm": ["Inter"],
+                  "headline-md": ["Newsreader"],
+                  "body-lg": ["Newsreader"]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-background text-on-background font-body-lg overflow-x-hidden">
+<!-- TopNavBar Implementation -->
+<header class="bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-[#b8860b]/20 shadow-[0_4px_30px_rgba(0,0,0,0.8)] flex justify-between items-center w-full px-8 h-20 fixed top-0 z-50 transition-all duration-500 ease-in-out">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-bold text-[#b8860b] drop-shadow-[0_0_8px_rgba(184,134,11,0.6)] font-serif italic tracking-wider">Yellow Path Chronicles</span>
+</div>
+<div class="hidden md:flex items-center space-x-8">
+<a class="text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b] transition-all duration-500 font-serif uppercase tracking-widest text-xs" href="#">Dashboard</a>
+<a class="text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b] transition-all duration-500 font-serif uppercase tracking-widest text-xs" href="#">Campaign</a>
+<a class="text-[#b8860b] border-b-2 border-[#b8860b] transition-all duration-500 font-serif uppercase tracking-widest text-xs" href="#">Cards</a>
+<a class="text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b] transition-all duration-500 font-serif uppercase tracking-widest text-xs" href="#">Library</a>
+</div>
+<div class="flex items-center space-x-6">
+<div class="relative group">
+<span class="material-symbols-outlined text-[#b8860b] cursor-pointer">notifications</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#b8860b] cursor-pointer">person_pin</span>
+</div>
+</div>
+</header>
+<!-- SideNavBar Implementation (Desktop) -->
+<aside class="hidden lg:flex flex-col h-screen fixed left-0 top-0 pt-24 pb-8 bg-[#0a0a0a] w-64 border-r border-[#b8860b]/10 shadow-[10px_0_30px_rgba(0,0,0,0.5)] z-40 transition-colors duration-300">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-full border border-[#b8860b]/40 overflow-hidden">
+<img alt="User Portrait" class="w-full h-full object-cover" data-alt="A dark, moody gothic portrait of a mysterious figure draped in tattered black velvet and ornate brass jewelry. The lighting is low and dramatic, casting deep shadows across a pale face with intense, luminous eyes. The background is a swirl of charcoal smoke and dim embers, maintaining a Victorian horror aesthetic consistent with a dark Oz fantasy world." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQhBBDLQXJVgXzG9HrOnPwEAxhoTXlBe7EHlxZjOBxY7JGKvOA2a2e-rvG5jim7TRc77OUws5waCGvrsPHKT3WHWOCHpJ7EUxXzRix5myrSAh-4jNFlHKbMGfCyFpvfGiCjsNnZ2z8k86lJ1vdRbZpP4kHB4Ya3zH9UiamDL6OISQuV4npPmZA5vOqOvTqRz-fb4Lx0a42uEhNNPKMfpyGP_KQz4_fFWHhKd8S4durYAdmcv8YVR3YA5mpjfI0T9fLTxVaGrLlSHGG"/>
+</div>
+<div>
+<p class="font-serif text-[#b8860b] text-sm uppercase tracking-wider">Chronicle Keeper</p>
+<p class="text-[10px] text-gray-500 uppercase tracking-widest">Level 42 | 1,200 Shards</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-6 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 gap-3 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">dashboard</span> Dashboard
+      </a>
+<a class="flex items-center px-6 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 gap-3 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">explore</span> Campaign
+      </a>
+<a class="flex items-center px-6 py-3 text-[#b8860b] bg-[#2c2c2c]/30 shadow-[inset_0_0_10px_rgba(184,134,11,0.2)] transition-colors duration-300 gap-3 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">style</span> Cards
+      </a>
+<a class="flex items-center px-6 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 gap-3 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">auto_stories</span> Library
+      </a>
+<a class="flex items-center px-6 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 gap-3 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">swap_horiz</span> Trading
+      </a>
+<a class="flex items-center px-6 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 gap-3 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">storefront</span> Marketplace
+      </a>
+<a class="flex items-center px-6 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 gap-3 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">military_tech</span> Membership
+      </a>
+</nav>
+<div class="mt-auto border-t border-[#b8860b]/10 pt-4">
+<a class="flex items-center px-6 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 gap-3 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">settings</span> Settings
+      </a>
+<a class="flex items-center px-6 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 gap-3 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">help_outline</span> Support
+      </a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="lg:pl-64 pt-24 pb-20 lg:pb-8 min-h-screen relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#141313] to-[#0a0a0a] -z-10"></div>
+<div class="absolute inset-0 vignette pointer-events-none -z-10 opacity-60"></div>
+<div class="max-w-[1200px] mx-auto px-8 py-8">
+<!-- Collection Header -->
+<section class="mb-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h1 class="font-display-lg text-display-lg text-[#b8860b] italic mb-2 tracking-tighter">Your Card Collection</h1>
+<p class="text-on-surface-variant font-serif italic text-lg">"Fragments of a shattered emerald dream."</p>
+</div>
+<div class="flex flex-col items-end">
+<div class="text-[#b8860b] font-serif text-sm uppercase tracking-[0.2em] mb-2">Collection Progress</div>
+<div class="w-64 h-1 bg-[#1c1b1b] rounded-full overflow-hidden border border-[#b8860b]/20">
+<div class="yellow-path-progress h-full w-[42%]"></div>
+</div>
+<p class="mt-2 text-[10px] text-gray-500 font-label-sm">412 / 980 UNLOCKED</p>
+</div>
+</div>
+</section>
+<!-- Search & Filters -->
+<section class="gothic-panel p-6 rounded-lg mb-10 border-[#b8860b]/10">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+<div class="lg:col-span-2 relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#b8860b]/50">search</span>
+<input class="w-full bg-surface-container-low border-b border-[#b8860b]/30 focus:border-[#b8860b] focus:ring-0 text-on-surface py-3 pl-12 font-serif text-sm placeholder:text-gray-600 transition-all" placeholder="Search by name or keyword..." type="text"/>
+</div>
+<div class="relative">
+<select class="w-full bg-surface-container-low border-b border-[#b8860b]/30 focus:border-[#b8860b] focus:ring-0 text-on-surface py-3 font-serif text-xs uppercase tracking-widest appearance-none">
+<option>Rarity: All</option>
+<option>Legendary</option>
+<option>Epic</option>
+<option>Rare</option>
+<option>Uncommon</option>
+<option>Common</option>
+<option>Starter</option>
+<option>Founder</option>
+</select>
+</div>
+<div class="relative">
+<select class="w-full bg-surface-container-low border-b border-[#b8860b]/30 focus:border-[#b8860b] focus:ring-0 text-on-surface py-3 font-serif text-xs uppercase tracking-widest appearance-none">
+<option>Type: All</option>
+<option>Survivor</option>
+<option>Relic</option>
+<option>Sanctuary</option>
+<option>Weapon</option>
+<option>Construct</option>
+</select>
+</div>
+<div class="relative">
+<select class="w-full bg-surface-container-low border-b border-[#b8860b]/30 focus:border-[#b8860b] focus:ring-0 text-on-surface py-3 font-serif text-xs uppercase tracking-widest appearance-none">
+<option>Market: Any</option>
+<option>Tradable</option>
+<option>Soulbound</option>
+<option>Listed</option>
+</select>
+</div>
+</div>
+</section>
+<!-- Trading Card Grid -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+<!-- Card 1: Dot Gale -->
+<div class="group relative aspect-[2/3] gothic-panel card-border-gold overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(184,134,11,0.2)]">
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 z-10"></div>
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A cinematic, gothic depiction of a young girl standing in a desolate, grey-scaled landscape under a swirling dark yellow sky. She wears weathered rural clothing and heavy leather boots, clutching a tattered basket that glows with a faint bioluminescent light. The art style is high-fantasy horror with oil-painting textures, dramatic shadows, and a somber, gritty atmosphere typical of a decaying Oz." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCirdOAdi7ecmAUo4ZRXS1zQpI82jEx2uk3ZLFrKboW3Q9W4fH9TkPt3cZ5QA0g3yP572st_Yl3En6hM_pBq1OdN9YofD7NRLZZGHFFWaySTpao2hcmwgNF9HL6f7YxsPVmk98-53ApJnWc-aoTvDAveqQ2aWxK4ZMWTYJE9TledNlE2X8MplZ_6GRtq8FsnV2G-5PYSFj634Q9_7IhHJ5c2zK-8QpdRI0c7NnrccpmicemvO7HlYzU2kXRwLdZWO4VdiEjoQWK7QVk"/>
+<div class="absolute top-4 right-4 z-20">
+<div class="bg-[#b8860b] text-black text-[10px] font-bold px-3 py-1 uppercase tracking-widest shadow-lg">Legendary</div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-6 z-20">
+<p class="text-[#b8860b] text-[10px] font-bold uppercase tracking-[0.3em] mb-1">Survivor</p>
+<h3 class="font-display-lg text-2xl text-on-surface leading-tight">Dot Gale</h3>
+<p class="text-xs text-gray-400 italic mb-4 opacity-0 group-hover:opacity-100 transition-opacity">"The ash doesn't wash off. It remembers."</p>
+<div class="flex items-center gap-4 text-[#b8860b]">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">shield</span> <span class="text-xs">42</span></div>
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">bolt</span> <span class="text-xs">18</span></div>
+</div>
+</div>
+</div>
+<!-- Card 2: Sir Hollin Thatch -->
+<div class="group relative aspect-[2/3] gothic-panel border-gray-700 overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(255,255,255,0.05)]">
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 z-10"></div>
+<img class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-transform duration-700 group-hover:scale-110" data-alt="A haunting image of a knight in shattered, rusted silver armor standing amidst a field of dead, dry poppies. His helmet is cracked open, revealing a skeletal jaw, and his cape is made of frayed, dirty straw. The background features a distorted, emerald-green fog that creates an eerie, supernatural glow. The lighting is cold and desaturated, emphasizing the decaying prestige of the character." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCU5DPPKa05WgJbD6UcwcEcql61sJz8YKtsr72umeSYLaHgrrdy0CxadzeSDKpnY1wHhuYYqiljoSBZskFZL6scnyf1IrpgUJsA6i0kixb2HoSZImnkU2PbNL-_5lWV7aI_1l5CPpROsyMPQsl7dkN98mfYer6vzKXuy_T8ApDCP_5e11UMPfivWqgS7sbT858guL7bwKR_0yGQOXmwNkjU-8LzT1D8z5Jm6XiLD1XlFO8J_emoVLiiKCQU716Gz6l61QY1sOMLGh3W"/>
+<div class="absolute top-4 right-4 z-20">
+<div class="bg-gray-200 text-black text-[10px] font-bold px-3 py-1 uppercase tracking-widest shadow-lg">Epic</div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-6 z-20">
+<p class="text-gray-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-1">Broken Knight</p>
+<h3 class="font-display-lg text-2xl text-on-surface leading-tight">Sir Hollin Thatch</h3>
+<p class="text-xs text-gray-400 italic mb-4 opacity-0 group-hover:opacity-100 transition-opacity">"Steel fails when the spirit is hollow."</p>
+<div class="flex items-center gap-4 text-gray-300">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">shield</span> <span class="text-xs">65</span></div>
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">bolt</span> <span class="text-xs">12</span></div>
+</div>
+</div>
+</div>
+<!-- Card 3: Rust Key -->
+<div class="group relative aspect-[2/3] gothic-panel border-[#8b0000]/40 overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(139,0,0,0.2)]">
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 z-10"></div>
+<img class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-transform duration-700 group-hover:scale-110" data-alt="An extreme close-up of a large, ornate iron key covered in thick, bubbling rust and what appears to be dried black blood. The key rests on a bed of dark, velvet shadow. The light hits the metallic edges, creating sharp, cold highlights against the rough, decaying texture of the rust. The atmosphere is one of dark secrets and ancient, forbidden power, rendered in a cinematic minimalist style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSAYBiehp709-NPXRIeh6b5r2y_0kK_xlBQJVyIH4McOWR8wXpmyhuJfLBeyru84Rdxm9FZDC2zzgblzpooUFOi4wk_2jFsoccADP-j8fjcXYmTPlfxL6tO6Wn4mWsOcdKljC8oS7S-4v_KOUXrxKWb3zighuLOY6X30h7SdQ9w5lV6IO6ZE0XsCY9B08h1-3-7dWhuRuTjt27nLcBSMPDbenICsVHTjFzc3D5OUreiVx77ET-QihqgKd-0Qm9HsUfmoBedzx8yovl"/>
+<div class="absolute top-4 right-4 z-20">
+<div class="bg-[#8b0000] text-white text-[10px] font-bold px-3 py-1 uppercase tracking-widest shadow-lg">Rare</div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-6 z-20">
+<p class="text-[#8b0000] text-[10px] font-bold uppercase tracking-[0.3em] mb-1">Relic</p>
+<h3 class="font-display-lg text-2xl text-on-surface leading-tight">Rust Key</h3>
+<div class="mt-4 flex flex-wrap gap-2">
+<span class="text-[9px] px-2 py-0.5 bg-[#8b0000]/20 border border-[#8b0000]/40 text-[#8b0000] rounded-full uppercase">Cursed</span>
+<span class="text-[9px] px-2 py-0.5 bg-[#8b0000]/20 border border-[#8b0000]/40 text-[#8b0000] rounded-full uppercase">Ancient</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Oil Derrick Refuge -->
+<div class="group relative aspect-[2/3] gothic-panel border-[#b8860b]/10 overflow-hidden cursor-pointer transition-all hover:-translate-y-2">
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 z-10"></div>
+<img class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-transform duration-700 group-hover:scale-110" data-alt="A sprawling, industrial oil derrick repurposed into a fortified gothic refuge. The structure is built from jagged metal and dark wood, looming over a misty, toxic-looking swamp. Flickering oil lanterns hang from its heights, casting a warm but sickly orange glow into the surrounding fog. The sky is a deep, bruised purple, giving the entire scene a heavy sense of dread and desperate survival." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB53x7OX8icSMuFh8D2ufr8A0usQwiaGLjMEhKLVDonnMMxcuJGZarSdeDCkdc1Vn4_8QJqhFL9HERiT7gricl_wINdxefhYRmslQO-eC4By-OOEBBKuuxcXweFC8Yrm8AgV2XvpocEUz0xuhVJxh-aa0C8DyGpL3pNMLlTKPo7eh6egGyNpnalOaCyxbagEE3lDWZ_D5YIbVqWtJBjRMpRTXkPsQnXAIkQVPdPTsVIjbAnaMJmjFerG4f_XZ4cFqIWgQuZCIwvcVMe"/>
+<div class="absolute top-4 right-4 z-20">
+<div class="bg-blue-900 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-widest shadow-lg">Uncommon</div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-6 z-20">
+<p class="text-blue-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-1">Sanctuary</p>
+<h3 class="font-display-lg text-2xl text-on-surface leading-tight">Oil Derrick Refuge</h3>
+<p class="text-[10px] text-gray-500 mt-2 font-label-sm">Provides +5 Resilience to constructs.</p>
+</div>
+</div>
+<!-- Card 5: Broken Dagger -->
+<div class="group relative aspect-[2/3] gothic-panel border-gray-800 overflow-hidden cursor-pointer transition-all hover:-translate-y-2">
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 z-10"></div>
+<img class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition-transform duration-700 group-hover:scale-110" data-alt="A jagged, broken dagger made of obsidian-like glass, its hilt wrapped in decaying leather. The blade lies on a cracked stone altar, reflecting a thin beam of moonlight that cuts through the surrounding pitch-black darkness. The image is hyper-focused on the sharp, lethal edges and the fine textures of the weathered leather. The mood is cold, violent, and ancient." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPtqQWPzR2rMU7i73PFrSWK66XuCo_OW8qI0nv71Tmzv2w0J1UhWKRK3MOY5mVz8ptPZku8n0CSWp-bW5EAYvQ7sunT4F5oX3gPMEx4XRI-7eaW2uv1CmwRp3nLFySlpRt77gk8yWw4fUTpXjxLxCth9DFEFzd8AtBa4Dpu2camtjL2ApX7hy00LxNPZtFJ2AlYEaHiqecFVaI2bH_G6_Vu7DbBcWbB0qcJJPHaRPtu5WarigBWHN8lFg8h02CVILU1-suNjhFbJGn"/>
+<div class="absolute top-4 right-4 z-20">
+<div class="bg-gray-600 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-widest shadow-lg">Common</div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-6 z-20">
+<p class="text-gray-500 text-[10px] font-bold uppercase tracking-[0.3em] mb-1">Weapon</p>
+<h3 class="font-display-lg text-2xl text-on-surface leading-tight">Broken Dagger</h3>
+</div>
+</div>
+<!-- Card 6: Locked Grimoire -->
+<div class="group relative aspect-[2/3] gothic-panel bg-black border-[#b8860b]/5 flex flex-col items-center justify-center text-center p-8 border-dashed">
+<span class="material-symbols-outlined text-4xl text-gray-800 mb-4">lock</span>
+<p class="font-serif text-[#b8860b]/40 text-sm uppercase tracking-widest">Locked Content</p>
+<p class="text-[10px] text-gray-700 mt-2">Requires Level 45 or "Emerald Gate" expansion.</p>
+</div>
+</section>
+<!-- Pagination / Load More -->
+<div class="mt-16 flex justify-center">
+<button class="px-10 py-3 bg-[#b8860b] text-black font-serif uppercase tracking-[0.3em] text-xs font-bold hover:bg-[#ffcc00] transition-colors shadow-[0_0_20px_rgba(184,134,11,0.4)]">
+          Scry Deeper
+        </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar Implementation (Mobile) -->
+<footer class="lg:hidden fixed bottom-0 left-0 w-full bg-[#0a0a0a]/95 backdrop-blur-md border-t border-[#8b0000]/30 shadow-[0_-10px_40px_rgba(0,0,0,0.9)] flex justify-around items-center h-16 pb-safe z-50">
+<a class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-serif text-[10px] uppercase">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-serif text-[10px] uppercase">Campaign</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#b8860b] drop-shadow-[0_0_10px_rgba(184,134,11,0.8)] transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined">style</span>
+<span class="font-serif text-[10px] uppercase">Cards</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-serif text-[10px] uppercase">Library</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span class="font-serif text-[10px] uppercase">Market</span>
+</a>
+</footer>
+</body></html>

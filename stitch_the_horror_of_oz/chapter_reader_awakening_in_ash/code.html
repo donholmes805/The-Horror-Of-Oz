@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;1,400;1,600&amp;family=Inter:wght@400;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "surface-container-highest": "#353434",
+                    "on-primary-container": "#7b7979",
+                    "inverse-on-surface": "#313030",
+                    "surface-variant": "#353434",
+                    "surface-container-lowest": "#0e0e0e",
+                    "background": "#141313",
+                    "on-background": "#e5e2e1",
+                    "secondary": "#c8c6c5",
+                    "surface-container": "#201f1f",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "on-tertiary-container": "#7c7977",
+                    "primary-fixed": "#e5e2e1",
+                    "tertiary-container": "#0b0a09",
+                    "tertiary-fixed-dim": "#cac6c3",
+                    "surface-bright": "#3a3939",
+                    "on-secondary-fixed-variant": "#474747",
+                    "on-tertiary": "#32302f",
+                    "surface": "#141313",
+                    "on-secondary": "#303030",
+                    "on-surface-variant": "#c4c7c7",
+                    "surface-container-high": "#2b2a2a",
+                    "inverse-surface": "#e5e2e1",
+                    "on-secondary-container": "#b6b5b4",
+                    "on-error": "#690005",
+                    "on-tertiary-fixed": "#1d1b1a",
+                    "on-tertiary-fixed-variant": "#484645",
+                    "on-surface": "#e5e2e1",
+                    "surface-tint": "#c9c6c5",
+                    "outline": "#8e9192",
+                    "outline-variant": "#444748",
+                    "secondary-container": "#474747",
+                    "surface-dim": "#141313",
+                    "inverse-primary": "#5f5e5e",
+                    "error-container": "#93000a",
+                    "on-primary-fixed-variant": "#474646",
+                    "secondary-fixed": "#e4e2e1",
+                    "surface-container-low": "#1c1b1b",
+                    "on-primary-fixed": "#1c1b1b",
+                    "primary-fixed-dim": "#c9c6c5",
+                    "error": "#ffb4ab",
+                    "on-error-container": "#ffdad6",
+                    "primary": "#c9c6c5",
+                    "tertiary": "#cac6c3",
+                    "primary-container": "#0a0a0a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "8px",
+                    "margin": "32px",
+                    "container-max": "1200px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Newsreader"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["Newsreader"],
+                    "body-lg": ["Newsreader"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                    "headline-md": ["32px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .gothic-panel {
+            background: linear-gradient(145deg, #201f1f 0%, #0e0e0e 100%);
+            border: 1px solid rgba(184, 134, 11, 0.15);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+        }
+        .text-glow {
+            text-shadow: 0 0 12px rgba(184, 134, 11, 0.4);
+        }
+        .yellow-path-progress {
+            background: linear-gradient(90deg, #b8860b 0%, #8b0000 100%);
+            box-shadow: 0 0 15px rgba(184, 134, 11, 0.6);
+        }
+        body {
+            background-color: #0a0a0a;
+            color: #e5e2e1;
+            overflow-x: hidden;
+        }
+        .vignette {
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.9) 100%);
+            z-index: 40;
+        }
+    </style>
+</head>
+<body class="font-body-lg text-body-lg">
+<div class="vignette"></div>
+<!-- TopNavBar from Shared Components -->
+<header class="bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-[#b8860b]/20 shadow-[0_4px_30px_rgba(0,0,0,0.8)] docked full-width top-0 z-50 flex justify-between items-center w-full px-8 h-20 transition-all duration-500 ease-in-out fixed">
+<div class="flex items-center gap-6">
+<span class="font-serif italic tracking-wider text-2xl font-bold text-[#b8860b] drop-shadow-[0_0_8px_rgba(184,134,11,0.6)]">Yellow Path Chronicles</span>
+</div>
+<div class="hidden md:flex items-center gap-8 font-serif uppercase tracking-widest text-xs">
+<button class="transition-all duration-500 ease-in-out text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b]">Dashboard</button>
+<button class="transition-all duration-500 ease-in-out text-[#b8860b] border-b-2 border-[#b8860b]">Campaign</button>
+<button class="transition-all duration-500 ease-in-out text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b]">Library</button>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 transition-all duration-500 ease-in-out text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b]">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 transition-all duration-500 ease-in-out text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b]">
+<span class="material-symbols-outlined">person_pin</span>
+</button>
+</div>
+</header>
+<main class="relative min-h-screen pt-32 pb-40 px-6 max-w-4xl mx-auto z-10">
+<!-- Reader Controls Overlay (Floating Style) -->
+<div class="fixed right-12 top-1/2 -translate-y-1/2 hidden xl:flex flex-col gap-4 p-4 gothic-panel rounded-full z-50">
+<button class="w-12 h-12 flex items-center justify-center text-primary hover:text-[#b8860b] transition-colors" title="Increase Font">
+<span class="material-symbols-outlined">text_increase</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center text-primary hover:text-[#b8860b] transition-colors" title="Decrease Font">
+<span class="material-symbols-outlined">text_decrease</span>
+</button>
+<div class="w-full h-[1px] bg-[#b8860b]/20"></div>
+<button class="w-12 h-12 flex items-center justify-center text-[#b8860b]" title="Dark Mode Active">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dark_mode</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center text-primary hover:text-[#b8860b] transition-colors" title="Add Bookmark">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+</div>
+<!-- Narrative Section -->
+<article class="space-y-12">
+<!-- Header Identity -->
+<div class="text-center space-y-4">
+<span class="font-label-sm text-label-sm text-[#b8860b] uppercase tracking-[0.3em]">Volume I: The Unmaking of Emerald</span>
+<h1 class="font-display-lg text-display-lg text-[#e5e2e1] italic text-glow">Chapter 1: Awakening in Ash</h1>
+<div class="flex items-center justify-center gap-4">
+<div class="h-[1px] w-12 bg-[#b8860b]/30"></div>
+<span class="material-symbols-outlined text-[#b8860b]">flare</span>
+<div class="h-[1px] w-12 bg-[#b8860b]/30"></div>
+</div>
+</div>
+<!-- Chapter Illustration -->
+<div class="w-full h-96 gothic-panel rounded-lg overflow-hidden relative group">
+<img class="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-1000" data-alt="A cinematic and moody digital painting of a desolate Oz, where the yellow brick road is cracked and covered in grey volcanic ash. A dark, skeletal Emerald City looms in the far distance under a blood-red sky thick with swirling embers. The atmosphere is heavy with Gothic horror and decaying prestige, lit by a flickering, eerie bioluminescent glow from dying magical flowers." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYoUb5aMPeY3qrsTxDKUCpd3WulPioDqr_Jdo5XXEdIv0JYL_RgfVdGQcGIdptmi3WTDKPJ4uyNBb_m3Mx_AfBxWb7-bSsmQkzqPoFLzD0B54vkbkuE70cHonpGZDEJrdY83n5nWSw16XKq3XUVliMatbn73oFMPjqY7iXeSr8-2Rd2orjYso95q08NFbNIsgVbX3vnyLe1_mWX5ttgjVgs6siJO4FQYM9gdTET1w7EsfH78fgPrcS9JJcD3r0TiT8WVeZnBKEvkTQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent"></div>
+</div>
+<!-- Narrative Text Area -->
+<section class="font-body-lg text-body-lg text-[#c8c6c5] leading-relaxed space-y-8 max-w-2xl mx-auto selection:bg-[#b8860b]/30 selection:text-white">
+<p class="first-letter:text-7xl first-letter:font-display-lg first-letter:text-[#b8860b] first-letter:mr-3 first-letter:float-left first-letter:leading-[0.8] mt-8">
+                    The air tasted of burnt copper and ancient ozone. When my eyes finally opened, the sky was not the brilliant, sapphire dome I remembered from the chronicles of the Great Oz. It was a bruised purple, choked with the heavy, falling soot of a world being unmade. I lay upon the cold, uneven surface of what used to be the Yellow Brick Road, but the path was no longer gold. It was a scorched, sickly yellow, like the teeth of a dying giant.
+                </p>
+<p>
+                    I reached out, my fingers brushing against the rough masonry. The stones felt brittle, as if the very magic that held them together had evaporated into the fog. Somewhere in the distance, a sound echoed—not the cheerful song of a Munchkin choir, but a low, rhythmic grinding of heavy iron gears. The Great Clock of Time was stuttering, and with it, the reality of this land.
+                </p>
+<blockquote class="border-l-2 border-[#b8860b] pl-8 py-4 my-12 italic font-serif text-2xl text-[#b8860b]/80">
+                    "The heart that was once given is now a hollow cage, and the brain that once thought is lost to the grey mist."
+                </blockquote>
+<p>
+                    A lantern flickered nearby, its flame a cold, bioluminescent green. It hung from a gnarled, leafless tree that looked like a hand clawing its way out of the earth. I stood up, my joints popping like dry twigs. My shadow stretched long and distorted against the cracked path, dancing to the tune of the flickering light. I was alone, yet I felt the weight of a thousand unseen eyes watching from the shifting shadows of the Poppy Fields—now a graveyard of withered stalks.
+                </p>
+<p>
+                    I checked my pack. The shards were still there, pulsing with a faint, rhythmic heat. Twelve hundred shards—the cost of a soul in this decaying paradise. If the legends were true, the Wizard hadn't left; he had simply retreated into the machinery of the city, becoming the very ghost in the shell that now haunted our dreams. I took a step forward, the ash crunching beneath my boots, and began my long walk toward the silhouette of the jagged spires on the horizon.
+                </p>
+</section>
+<!-- Divider -->
+<div class="py-16 flex justify-center">
+<div class="flex gap-2">
+<span class="w-2 h-2 rounded-full bg-[#b8860b]/20"></span>
+<span class="w-2 h-2 rounded-full bg-[#b8860b]/50"></span>
+<span class="w-2 h-2 rounded-full bg-[#b8860b]/20"></span>
+</div>
+</div>
+</article>
+<!-- Footer Navigation & Status -->
+<div class="mt-20 space-y-12">
+<!-- Progress Bar -->
+<div class="space-y-4">
+<div class="flex justify-between font-label-sm text-label-sm text-[#4a4a4a] uppercase tracking-widest">
+<span>Chapter Progress</span>
+<span>65% Complete</span>
+</div>
+<div class="w-full h-1 bg-[#2c2c2c] rounded-full overflow-hidden">
+<div class="yellow-path-progress h-full w-[65%]"></div>
+</div>
+</div>
+<!-- Prev/Next Controls -->
+<nav class="flex justify-between items-center py-8">
+<button class="group flex items-center gap-4 text-[#4a4a4a] hover:text-[#b8860b] transition-all duration-300">
+<span class="material-symbols-outlined text-4xl group-hover:-translate-x-2 transition-transform">chevron_left</span>
+<div class="text-left">
+<p class="font-label-sm text-xs uppercase tracking-widest">Previous</p>
+<p class="font-serif italic text-lg">Introduction: The Fall</p>
+</div>
+</button>
+<button class="group flex items-center gap-4 text-right text-[#b8860b]">
+<div class="text-right">
+<p class="font-label-sm text-xs uppercase tracking-widest">Next Chapter</p>
+<p class="font-serif italic text-lg">The Tin Man's Requiem</p>
+</div>
+<span class="material-symbols-outlined text-4xl group-hover:translate-x-2 transition-transform">chevron_right</span>
+</button>
+</nav>
+</div>
+<!-- Watermark & Footer Info -->
+<footer class="mt-32 pt-8 border-t border-[#b8860b]/10 text-center space-y-2 opacity-40">
+<p class="font-label-sm text-[10px] tracking-widest text-[#b8860b]">LICENSED TO CHRONICLEKEEPER@OZ.COM</p>
+<p class="font-label-sm text-[10px] tracking-widest uppercase">© 2024 Yellow Path Chronicles. All Rights Reserved. Forbidden to distribute.</p>
+</footer>
+</main>
+<!-- SideNavBar (Hidden on desktop as per shell rules for focus, but present in JSON) -->
+<!-- Not rendered to prioritize the Reading "Canvas" as per The UX Goal -->
+<!-- BottomNavBar for Mobile -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 pb-safe bg-[#0a0a0a]/95 backdrop-blur-md border-t border-[#8b0000]/30 shadow-[0_-10px_40px_rgba(0,0,0,0.9)] rounded-t-xl z-50">
+<div class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-serif text-[10px] uppercase">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#b8860b] drop-shadow-[0_0_10px_rgba(184,134,11,0.8)] transition-transform duration-200 active:scale-90">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-serif text-[10px] uppercase">Campaign</span>
+</div>
+<div class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-serif text-[10px] uppercase">Library</span>
+</div>
+</nav>
+</body></html>

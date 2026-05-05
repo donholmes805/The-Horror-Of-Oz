@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Horror of Oz | Chronicle Keeper Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;family=Inter:wght@400;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-container-highest": "#353434",
+                        "on-primary-container": "#7b7979",
+                        "inverse-on-surface": "#313030",
+                        "surface-variant": "#353434",
+                        "surface-container-lowest": "#0e0e0e",
+                        "background": "#141313",
+                        "on-background": "#e5e2e1",
+                        "secondary": "#c8c6c5",
+                        "surface-container": "#201f1f",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-tertiary-container": "#7c7977",
+                        "primary-fixed": "#e5e2e1",
+                        "tertiary-container": "#0b0a09",
+                        "tertiary-fixed-dim": "#cac6c3",
+                        "surface-bright": "#3a3939",
+                        "on-secondary-fixed-variant": "#474747",
+                        "on-tertiary": "#32302f",
+                        "surface": "#141313",
+                        "on-secondary": "#303030",
+                        "on-surface-variant": "#c4c7c7",
+                        "surface-container-high": "#2b2a2a",
+                        "inverse-surface": "#e5e2e1",
+                        "on-secondary-container": "#b6b5b4",
+                        "on-error": "#690005",
+                        "on-tertiary-fixed": "#1d1b1a",
+                        "on-tertiary-fixed-variant": "#484645",
+                        "on-surface": "#e5e2e1",
+                        "surface-tint": "#c9c6c5",
+                        "outline": "#8e9192",
+                        "outline-variant": "#444748",
+                        "secondary-container": "#474747",
+                        "surface-dim": "#141313",
+                        "inverse-primary": "#5f5e5e",
+                        "error-container": "#93000a",
+                        "on-primary-fixed-variant": "#474646",
+                        "secondary-fixed": "#e4e2e1",
+                        "surface-container-low": "#1c1b1b",
+                        "on-primary-fixed": "#1c1b1b",
+                        "primary-fixed-dim": "#c9c6c5",
+                        "error": "#ffb4ab",
+                        "on-error-container": "#ffdad6",
+                        "primary": "#c9c6c5",
+                        "tertiary": "#cac6c3",
+                        "primary-container": "#0a0a0a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Newsreader"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Newsreader"],
+                        "body-lg": ["Newsreader"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                        "headline-md": ["32px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .gothic-panel {
+            background: linear-gradient(145deg, #1c1b1b 0%, #0e0e0e 100%);
+            border: 1px solid rgba(184, 214, 11, 0.1);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        .brass-accent {
+            color: #b8860b;
+            text-shadow: 0 0 8px rgba(184, 134, 11, 0.4);
+        }
+        .yellow-path-glow {
+            box-shadow: 0 0 15px rgba(184, 134, 11, 0.2);
+        }
+        .vignette-overlay {
+            background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.8) 100%);
+            pointer-events: none;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #2c2c2c; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b8860b; }
+    </style>
+</head>
+<body class="bg-[#0a0a0a] text-on-surface font-body-lg overflow-x-hidden">
+<!-- Atmospheric Vignette -->
+<div class="fixed inset-0 vignette-overlay z-[60]"></div>
+<!-- TopNavBar -->
+<nav class="bg-[#0a0a0a]/90 backdrop-blur-xl text-[#b8860b] font-serif italic tracking-wider border-b border-[#b8860b]/20 shadow-[0_4px_30px_rgba(0,0,0,0.8)] docked full-width top-0 z-50 flex justify-between items-center w-full px-8 h-20 transition-all duration-500 ease-in-out">
+<div class="text-2xl font-bold text-[#b8860b] drop-shadow-[0_0_8px_rgba(184,134,11,0.6)]">Yellow Path Chronicles</div>
+<div class="flex items-center gap-6">
+<div class="relative group">
+<input class="bg-surface-container-low border-b border-[#b8860b]/30 text-on-surface px-4 py-2 focus:outline-none focus:border-[#b8860b] focus:ring-0 transition-all font-serif" placeholder="Search the archives..." type="text"/>
+<span class="material-symbols-outlined absolute right-2 top-2 text-[#b8860b]/50 group-hover:text-[#b8860b]">search</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="transition-all duration-500 ease-in-out hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b]">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="transition-all duration-500 ease-in-out hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b]">
+<span class="material-symbols-outlined" data-icon="person_pin">person_pin</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="hidden lg:flex flex-col h-screen fixed left-0 top-0 pt-24 pb-8 bg-[#0a0a0a] border-r border-[#b8860b]/10 shadow-[10px_0_30px_rgba(0,0,0,0.5)] w-64 z-40 transition-colors duration-300">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 p-3 rounded-lg border border-[#b8860b]/10 bg-[#2c2c2c]/20">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-[#b8860b]/30">
+<img alt="Chronicle Keeper Portrait" class="w-full h-full object-cover" data-alt="A dark, gothic portrait of a mysterious figure dressed in Victorian funeral attire. The face is partially obscured by shadows, with pale skin and sharp, intelligent eyes that pierce through the gloom. The background consists of velvet textures and faint candlelight, creating an atmosphere of ancient secrets and intellectual decay." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1l9SFcTRRJ1svFWqYS7pbrYWH_1vNz9gbMEoLW8giRW5l7un0RNFcTnqRJbBY3hnaluZJbLFV5p8nKf-iQCXZxgynSdTlwss0nvM1qVqLdZ8nDB3u53K70-P2nGT2EgnYiwR6qKHGXi37ArhOdAYG786kAYOVQopQPJj3-jJ0aenE7IC1w-cf354fEhx6Q5St-ZwDDak04Sz-pkLu-ER2x9sQ2p665DtuEvny81MGbkc1Xn7OS-cczSiY3i7hO7jfWY_Ws2LFUPIt"/>
+</div>
+<div>
+<p class="font-serif uppercase tracking-widest text-[10px] text-[#b8860b]">Chronicle Keeper</p>
+<p class="text-[9px] text-[#4a4a4a]">Level 42 | 1,200 Shards</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1 px-4 overflow-y-auto">
+<a class="flex items-center gap-3 px-4 py-3 font-serif uppercase tracking-widest text-xs transition-colors duration-300 text-[#b8860b] bg-[#2c2c2c]/30 shadow-[inset_0_0_10px_rgba(184,134,11,0.2)]" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 font-serif uppercase tracking-widest text-xs transition-colors duration-300 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b]" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span> Campaign
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 font-serif uppercase tracking-widest text-xs transition-colors duration-300 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b]" href="#">
+<span class="material-symbols-outlined" data-icon="style">style</span> Cards
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 font-serif uppercase tracking-widest text-xs transition-colors duration-300 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b]" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span> Library
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 font-serif uppercase tracking-widest text-xs transition-colors duration-300 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b]" href="#">
+<span class="material-symbols-outlined" data-icon="swap_horiz">swap_horiz</span> Trading
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 font-serif uppercase tracking-widest text-xs transition-colors duration-300 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b]" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span> Marketplace
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 font-serif uppercase tracking-widest text-xs transition-colors duration-300 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b]" href="#">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span> Membership
+            </a>
+</nav>
+<div class="px-4 pt-4 border-t border-[#b8860b]/10 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 font-serif uppercase tracking-widest text-xs transition-colors duration-300 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b]" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span> Settings
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 font-serif uppercase tracking-widest text-xs transition-colors duration-300 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b]" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span> Support
+            </a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="lg:pl-64 pt-20 min-h-screen relative z-10">
+<div class="p-8 space-y-8">
+<!-- Header Section -->
+<header class="flex justify-between items-end">
+<div>
+<h1 class="font-display-lg text-display-lg text-[#b8860b]">Palace Overseer</h1>
+<p class="text-on-surface-variant font-serif italic">Reviewing the unmaking of the Emerald Realms</p>
+</div>
+<div class="flex gap-4">
+<button class="bg-[#b8860b] text-black px-6 py-2 font-serif font-bold tracking-tight hover:scale-105 transition-transform flex items-center gap-2 yellow-path-glow">
+<span class="material-symbols-outlined">add_circle</span> NEW CHAPTER
+                    </button>
+<button class="border border-[#8b0000] text-[#8b0000] px-6 py-2 font-serif font-bold tracking-tight hover:bg-[#8b0000]/10 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">lock_reset</span> SECURITY LOG
+                    </button>
+</div>
+</header>
+<!-- Overview Grid (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Large Player Stat Card -->
+<div class="lg:col-span-2 gothic-panel p-6 border-l-4 border-l-[#b8860b] relative overflow-hidden group">
+<div class="relative z-10">
+<div class="flex justify-between mb-4">
+<span class="font-label-sm text-label-sm text-[#b8860b]">Daily Active Souls</span>
+<span class="text-[#b8860b] material-symbols-outlined">groups</span>
+</div>
+<div class="flex items-baseline gap-4">
+<span class="font-display-lg text-display-lg text-on-surface">12,842</span>
+<span class="text-green-500 font-label-sm text-label-sm flex items-center">+14% ↑</span>
+</div>
+<div class="mt-6 h-24 w-full bg-surface-container-lowest rounded overflow-hidden relative">
+<!-- Mock Chart Lines -->
+<div class="absolute bottom-0 left-0 w-full h-full opacity-30 flex items-end">
+<div class="bg-[#b8860b] w-[10%] h-[40%] mx-0.5"></div>
+<div class="bg-[#b8860b] w-[10%] h-[55%] mx-0.5"></div>
+<div class="bg-[#b8860b] w-[10%] h-[45%] mx-0.5"></div>
+<div class="bg-[#b8860b] w-[10%] h-[70%] mx-0.5"></div>
+<div class="bg-[#b8860b] w-[10%] h-[85%] mx-0.5"></div>
+<div class="bg-[#b8860b] w-[10%] h-[60%] mx-0.5"></div>
+<div class="bg-[#b8860b] w-[10%] h-[95%] mx-0.5"></div>
+</div>
+</div>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-5 pointer-events-none transition-transform duration-700 group-hover:scale-110">
+<span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">theater_comedy</span>
+</div>
+</div>
+<!-- Shard Volume Card -->
+<div class="gothic-panel p-6 border-l-4 border-l-[#8b0000]">
+<div class="flex justify-between mb-4">
+<span class="font-label-sm text-label-sm text-[#8b0000]">Shard Circulation</span>
+<span class="text-[#8b0000] material-symbols-outlined">payments</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-display-lg text-4xl text-on-surface">2.4M</span>
+<span class="text-[#b8860b] font-serif italic text-xs">shards</span>
+</div>
+<p class="text-on-surface-variant text-xs mt-2 italic font-serif">Estimated market cap: 840 Soul Credits</p>
+<div class="mt-4 flex gap-1">
+<div class="flex-1 h-1 bg-[#8b0000]/20 rounded-full overflow-hidden">
+<div class="h-full bg-[#8b0000] w-2/3 shadow-[0_0_8px_#8b0000]"></div>
+</div>
+</div>
+</div>
+<!-- Active Campaigns -->
+<div class="gothic-panel p-6 border-l-4 border-l-secondary-fixed-dim">
+<div class="flex justify-between mb-4">
+<span class="font-label-sm text-label-sm text-secondary-fixed-dim">Ongoing Campaigns</span>
+<span class="text-secondary-fixed-dim material-symbols-outlined">map</span>
+</div>
+<div class="font-display-lg text-4xl text-on-surface">18</div>
+<div class="mt-4 flex -space-x-2">
+<div class="w-8 h-8 rounded-full border border-surface bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Dark portrait of a character with glowing eyes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAj5LEmJOAQjsf0Vlkrdx173lMMJVTGodT1sEiJ4cmztn31bne-yMKqqcfSpj72t6CHzvwlOjckge1-qTNTmRNut1j_eTS8KSkqZN6MObca2A0d02wifDZf5EOkfAXD9H0i3YACshnfaLyZ7edjR-_NV9JPdkl2lBwOec9bvC1JIqNsdGedkQyxlY1kUR1bDZZXAuOzDO1q375xKzSwoXNgWnAlYEcxKem-1LFpP7GGSLpdmxLvbeKnDy3Jqc6-MipXsMZz9Tm-HdKa"/>
+</div>
+<div class="w-8 h-8 rounded-full border border-surface bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Somber portrait of a gothic warrior" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAivw6WOHvYpzco91LXrEdnHx9OCY32WuDTjn7MLc-YSI8he37LXOprlGaJeIZWt05HLZ67QFX6qQnLKnpAI1F75fIt_lzKDxw7iDvjBB7wxzOX5jxmdqm9wbhDHummsE26wq4PWOBixqcRaYnK3oSqDBWpplZObHBG0w6Aq8BpbzpojBaHiqf2Ua41VUzJptS_xwCugnDkW0X55zR13wtrumWTU96lqlrvsK8M3MZfRo4TZApw-DVHwFgaWE81CZEVDbhZ8rDnsdxf"/>
+</div>
+<div class="w-8 h-8 rounded-full border border-surface bg-surface-container-highest flex items-center justify-center text-[10px] font-bold">+5</div>
+</div>
+</div>
+</div>
+<!-- Management Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Content Nodes Column -->
+<div class="md:col-span-2 space-y-6">
+<h3 class="font-serif uppercase tracking-widest text-xs text-[#b8860b] border-b border-[#b8860b]/20 pb-2">Archival Nodes</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Cards Management -->
+<div class="gothic-panel p-4 flex items-center gap-4 hover:bg-[#2c2c2c]/40 transition-colors cursor-pointer group">
+<div class="w-12 h-12 bg-surface-container-highest flex items-center justify-center border border-[#b8860b]/20 group-hover:border-[#b8860b] transition-colors">
+<span class="material-symbols-outlined text-[#b8860b]">style</span>
+</div>
+<div>
+<h4 class="font-serif font-bold text-sm">Gothic Deck</h4>
+<p class="text-xs text-on-surface-variant">412 Cards • 12 Legendary</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-xs opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</div>
+<!-- Board Nodes -->
+<div class="gothic-panel p-4 flex items-center gap-4 hover:bg-[#2c2c2c]/40 transition-colors cursor-pointer group">
+<div class="w-12 h-12 bg-surface-container-highest flex items-center justify-center border border-[#b8860b]/20 group-hover:border-[#b8860b] transition-colors">
+<span class="material-symbols-outlined text-[#b8860b]">hub</span>
+</div>
+<div>
+<h4 class="font-serif font-bold text-sm">Board Nodes</h4>
+<p class="text-xs text-on-surface-variant">89 Locations • 4 Locked</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-xs opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</div>
+<!-- Books & Chapters -->
+<div class="gothic-panel p-4 flex items-center gap-4 hover:bg-[#2c2c2c]/40 transition-colors cursor-pointer group">
+<div class="w-12 h-12 bg-surface-container-highest flex items-center justify-center border border-[#b8860b]/20 group-hover:border-[#b8860b] transition-colors">
+<span class="material-symbols-outlined text-[#b8860b]">auto_stories</span>
+</div>
+<div>
+<h4 class="font-serif font-bold text-sm">Grimoires</h4>
+<p class="text-xs text-on-surface-variant">6 Books • 24 Chapters</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-xs opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</div>
+<!-- Marketplace -->
+<div class="gothic-panel p-4 flex items-center gap-4 hover:bg-[#2c2c2c]/40 transition-colors cursor-pointer group">
+<div class="w-12 h-12 bg-surface-container-highest flex items-center justify-center border border-[#b8860b]/20 group-hover:border-[#b8860b] transition-colors">
+<span class="material-symbols-outlined text-[#b8860b]">storefront</span>
+</div>
+<div>
+<h4 class="font-serif font-bold text-sm">Marketplace</h4>
+<p class="text-xs text-on-surface-variant">1,402 Active Listings</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-xs opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</div>
+</div>
+<!-- Marketplace Transaction Feed -->
+<div class="gothic-panel p-6 mt-8">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-serif italic text-xl text-[#b8860b]">Recent Trade Decrees</h3>
+<button class="text-xs uppercase tracking-widest text-on-surface-variant hover:text-[#b8860b]">View Ledger</button>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-4 py-2 border-b border-surface-container-highest last:border-0">
+<div class="w-10 h-10 bg-[#b8860b]/10 flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-[#b8860b]">swap_horiz</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-serif"><span class="text-[#b8860b]">Exile_404</span> traded "Silver Slippers" to <span class="text-[#b8860b]">Oz_Witch</span></p>
+<p class="text-[10px] text-on-surface-variant font-label-sm">2 MINUTES AGO • 450 SHARDS</p>
+</div>
+<span class="text-xs text-green-500 font-bold italic">+Tax Collected</span>
+</div>
+<div class="flex items-center gap-4 py-2 border-b border-surface-container-highest last:border-0">
+<div class="w-10 h-10 bg-[#8b0000]/10 flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-[#8b0000]">error</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-serif">Trade Cancelled: Missing Soul Bound Seal</p>
+<p class="text-[10px] text-on-surface-variant font-label-sm">15 MINUTES AGO • SYSTEM ALERT</p>
+</div>
+<span class="text-xs text-[#8b0000] font-bold italic">Resolved</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Side Actions Column -->
+<div class="space-y-6">
+<h3 class="font-serif uppercase tracking-widest text-xs text-[#b8860b] border-b border-[#b8860b]/20 pb-2">Overseer Actions</h3>
+<div class="grid grid-cols-1 gap-4">
+<button class="gothic-panel p-4 flex flex-col items-center justify-center gap-2 hover:border-[#b8860b] transition-all group">
+<span class="material-symbols-outlined text-3xl text-[#b8860b] group-hover:scale-110 transition-transform">headset</span>
+<span class="font-serif font-bold text-sm tracking-widest">UPLOAD AUDIOBOOK</span>
+<span class="text-[10px] text-on-surface-variant">FLAC/MP3 • MAX 500MB</span>
+</button>
+<button class="gothic-panel p-4 flex flex-col items-center justify-center gap-2 hover:border-[#b8860b] transition-all group">
+<span class="material-symbols-outlined text-3xl text-[#b8860b] group-hover:scale-110 transition-transform">military_tech</span>
+<span class="font-serif font-bold text-sm tracking-widest">FORGE REWARDS</span>
+<span class="text-[10px] text-on-surface-variant">Seasonal Shard Packages</span>
+</button>
+<div class="bg-[#2c2c2c]/10 border border-[#b8860b]/10 p-6 rounded-lg relative overflow-hidden">
+<h4 class="font-serif italic text-[#b8860b] mb-2">Shadow Metrics</h4>
+<div class="space-y-3">
+<div>
+<div class="flex justify-between text-[10px] mb-1 uppercase tracking-widest">
+<span>Server Load</span>
+<span class="text-[#b8860b]">42%</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-[#b8860b] w-[42%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] mb-1 uppercase tracking-widest">
+<span>Sanity Index</span>
+<span class="text-[#8b0000]">Critical</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-[#8b0000] w-[88%] shadow-[0_0_5px_#8b0000]"></div>
+</div>
+</div>
+</div>
+<div class="absolute -right-10 -top-10 opacity-5 pointer-events-none">
+<span class="material-symbols-outlined text-[150px]">monitoring</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 pb-safe bg-[#0a0a0a]/95 backdrop-blur-md text-[#b8860b] font-serif text-[10px] uppercase border-t border-[#8b0000]/30 shadow-[0_-10px_40px_rgba(0,0,0,0.9)] z-50">
+<a class="flex flex-col items-center justify-center text-[#b8860b] drop-shadow-[0_0_10px_rgba(184,134,11,0.8)] transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span>Campaign</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="style">style</span>
+<span>Cards</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+<span>Library</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span>Market</span>
+</a>
+</nav>
+</body></html>

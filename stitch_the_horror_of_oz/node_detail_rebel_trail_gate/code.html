@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;1,400;1,600&amp;family=Inter:wght@400;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "surface-container-highest": "#353434",
+                    "on-primary-container": "#7b7979",
+                    "inverse-on-surface": "#313030",
+                    "surface-variant": "#353434",
+                    "surface-container-lowest": "#0e0e0e",
+                    "background": "#141313",
+                    "on-primary": "#313030",
+                    "tertiary-fixed": "#e6e1df",
+                    "on-background": "#e5e2e1",
+                    "secondary": "#c8c6c5",
+                    "surface-container": "#201f1f",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "on-tertiary-container": "#7c7977",
+                    "primary-fixed": "#e5e2e1",
+                    "tertiary-container": "#0b0a09",
+                    "tertiary-fixed-dim": "#cac6c3",
+                    "surface-bright": "#3a3939",
+                    "on-secondary-fixed-variant": "#474747",
+                    "on-tertiary": "#32302f",
+                    "surface": "#141313",
+                    "on-secondary": "#303030",
+                    "on-surface-variant": "#c4c7c7",
+                    "surface-container-high": "#2b2a2a",
+                    "inverse-surface": "#e5e2e1",
+                    "on-secondary-container": "#b6b5b4",
+                    "on-error": "#690005",
+                    "on-tertiary-fixed": "#1d1b1a",
+                    "on-tertiary-fixed-variant": "#484645",
+                    "on-surface": "#e5e2e1",
+                    "surface-tint": "#c9c6c5",
+                    "outline": "#8e9192",
+                    "outline-variant": "#444748",
+                    "secondary-container": "#474747",
+                    "surface-dim": "#141313",
+                    "inverse-primary": "#5f5e5e",
+                    "error-container": "#93000a",
+                    "on-primary-fixed-variant": "#474646",
+                    "secondary-fixed": "#e4e2e1",
+                    "surface-container-low": "#1c1b1b",
+                    "on-primary-fixed": "#1c1b1b",
+                    "primary-fixed-dim": "#c9c6c5",
+                    "error": "#ffb4ab",
+                    "on-error-container": "#ffdad6",
+                    "primary": "#c9c6c5",
+                    "tertiary": "#cac6c3",
+                    "primary-container": "#0a0a0a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "8px",
+                    "margin": "32px",
+                    "container-max": "1200px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Newsreader"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["Newsreader"],
+                    "body-lg": ["Newsreader"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                    "headline-md": ["32px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .gothic-panel {
+            background-image: radial-gradient(circle at center, #2c2c2c 0%, #141313 100%);
+            border: 1px solid rgba(184, 134, 11, 0.3);
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8), 0 20px 50px rgba(0, 0, 0, 0.9);
+        }
+        .brass-glow {
+            text-shadow: 0 0 10px rgba(184, 134, 11, 0.6);
+        }
+        .fog-overlay {
+            background: radial-gradient(circle, transparent 20%, rgba(10, 10, 10, 0.95) 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface-dim text-on-surface font-body-lg min-h-screen overflow-hidden">
+<!-- Campaign Map Background (Blurred/Darkened for Modal) -->
+<div class="fixed inset-0 z-0">
+<img class="w-full h-full object-cover opacity-30 grayscale blur-sm" data-alt="A sprawling, hand-drawn gothic fantasy map of a decaying land reminiscent of Oz. The terrain is shrouded in thick, rolling grey fog with a faint yellow brick road winding through charred forests and jagged mountains. Subtle atmospheric particles drift across the landscape, which is rendered in deep blacks, charcoal greys, and muted ochre tones. The lighting is low and cinematic, emphasizing the vast, dread-filled scale of the world." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZlGykr5HLtxkiz_SH1wFOF5saSt8ufEfRoWrsE8_8KenC_8H_ZyfDs1Q7FqFO5Z7Ypre4oHY412O6VLWw6ajaC5tdH1NR_WAXnMwnR0ZmQcwU-q6w4OsC3TQ8RP7sBQtDDtxCNRid-mcgGw6o0RRtkldI8zJVQ0VfRhFIthalL7_5qVoRhbZfGjUKXWtQ3PmoDz8pEFcuT967FBqSHJsGWYrdoVqJ7lUJ4g1Byd-GvW65ZE5rITd_tfrRhdgspn-7PGy3m1EJH8ZM"/>
+<div class="absolute inset-0 fog-overlay"></div>
+</div>
+<!-- Modal Backdrop -->
+<div class="fixed inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
+<!-- Node Detail Modal: Rebel Trail Gate -->
+<div class="gothic-panel relative w-full max-w-2xl rounded-lg overflow-hidden border-[#b8860b]/30 flex flex-col md:flex-row">
+<!-- Left Side: Visual/Flavor -->
+<div class="w-full md:w-5/12 relative min-h-[300px] border-b md:border-b-0 md:border-r border-[#b8860b]/20">
+<img class="w-full h-full object-cover" data-alt="A close-up shot of a massive, ancient iron gate rusted with age, standing alone in a thick, eerie fog. In the center of the heavy metal bars is an ornate, polished brass keyhole that emits a faint, magical golden pulse. The surrounding atmosphere is dark and oppressive, with dead vines clinging to the ironwork. The visual style is highly detailed skeuomorphism with heavy cinematic shadows and a sharp focus on the glowing metallic mechanism." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEin90g2ji0qhEClhkAgE6NLLIZMQ_TxBT68xmHpSfZrK29EdqDavSx9SblR9Kk1zSe42S0RyEz4nT8j2UprhKhzEqb_OEmLxSqDc__haVWIKnCFWwLb1Ga5hhf7KzjM4G5qvyEMIbfMs4dalMnFDJT8qtTS4IYDyHtY_EyZA9-CksAxRgDLGdGmKfvvi49EQw3EH8v9lMSgfL_V9aXcUXtprv76jBtgaNXLs4UZkwTPMJaibtP9oyPobVBy302Vq2PBduw5S8xjmm"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+<div class="absolute bottom-6 left-6">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-[#b8860b] text-3xl brass-glow" data-icon="lock" style="font-variation-settings: 'FILL' 1;">lock</span>
+<span class="font-label-sm text-label-sm text-[#b8860b] uppercase tracking-widest">Locked Door</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface leading-tight">Rebel Trail Gate</h2>
+</div>
+</div>
+<!-- Right Side: Interaction/Details -->
+<div class="w-full md:w-7/12 p-8 flex flex-col">
+<div class="flex-grow">
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8 italic">
+                        The iron bars groan under the weight of an unseen pressure. Beyond this threshold, the Yellow Path dissolves into the whispering mists of the Rebel Trail. A specialized lock holds it fast—one that hungers for a specific shape or a proven spirit.
+                    </p>
+<!-- Requirements Section -->
+<div class="mb-8">
+<h4 class="font-label-sm text-label-sm text-secondary-fixed-dim uppercase mb-4 tracking-tighter border-b border-outline-variant pb-2">Entrance Requirements</h4>
+<ul class="space-y-4">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-[#8b0000] mt-1" data-icon="vpn_key">vpn_key</span>
+<div>
+<p class="font-body-lg text-on-surface leading-none">Rust Key</p>
+<p class="text-sm text-on-secondary-container">Item required in inventory</p>
+</div>
+</li>
+<li class="flex items-center gap-3">
+<div class="w-full h-[1px] bg-outline-variant flex-grow"></div>
+<span class="font-label-sm text-[10px] text-outline">OR</span>
+<div class="w-full h-[1px] bg-outline-variant flex-grow"></div>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-[#b8860b] mt-1" data-icon="assignment_turned_in">assignment_turned_in</span>
+<div>
+<p class="font-body-lg text-on-surface leading-none">Rescue Sir Hollin Thatch</p>
+<p class="text-sm text-on-secondary-container">Quest completion required</p>
+</div>
+</li>
+</ul>
+</div>
+<!-- Rewards Section -->
+<div class="mb-8">
+<h4 class="font-label-sm text-label-sm text-[#b8860b] uppercase mb-4 tracking-tighter border-b border-[#b8860b]/20 pb-2">Unlock Rewards</h4>
+<div class="grid grid-cols-3 gap-4">
+<div class="bg-surface-container-high p-3 border border-outline-variant rounded-sm text-center">
+<span class="material-symbols-outlined text-tertiary mb-1" data-icon="style">style</span>
+<p class="text-[10px] font-label-sm leading-tight text-on-surface-variant">Starter Card</p>
+</div>
+<div class="bg-surface-container-high p-3 border border-[#b8860b]/30 rounded-sm text-center">
+<span class="material-symbols-outlined text-[#b8860b] mb-1" data-icon="stars" style="font-variation-settings: 'FILL' 1;">stars</span>
+<p class="text-[10px] font-label-sm leading-tight text-[#b8860b]">25 Shards</p>
+</div>
+<div class="bg-surface-container-high p-3 border border-outline-variant rounded-sm text-center">
+<span class="material-symbols-outlined text-on-surface-variant mb-1" data-icon="auto_stories">auto_stories</span>
+<p class="text-[10px] font-label-sm leading-tight text-on-surface-variant">Section I</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Actions -->
+<div class="space-y-3 pt-4">
+<button class="w-full bg-[#b8860b] hover:bg-[#996d00] text-background font-label-sm text-label-sm py-4 rounded-sm transition-all duration-300 uppercase tracking-widest shadow-[0_0_15px_rgba(184,134,11,0.4)]">
+                        Unlock Gate
+                    </button>
+<div class="grid grid-cols-2 gap-3">
+<button class="border border-outline-variant hover:bg-surface-container-highest text-on-surface font-label-sm text-[11px] py-3 rounded-sm transition-all duration-300 uppercase tracking-widest">
+                            View Requirements
+                        </button>
+<button class="border border-[#8b0000]/40 hover:bg-[#8b0000]/10 text-on-surface font-label-sm text-[11px] py-3 rounded-sm transition-all duration-300 uppercase tracking-widest">
+                            Back to Map
+                        </button>
+</div>
+</div>
+</div>
+<!-- Close Trigger -->
+<button class="absolute top-4 right-4 text-outline hover:text-[#b8860b] transition-colors">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Global Nav Shell (Suppressed contextually but showing structure for top level if needed) -->
+<!-- As per rule: Suppress navigation shell if the page intent is Task-Focused/Close action implies departure -->
+<!-- We skip BottomNavBar/SideNavBar here as it's a focused Modal Detail screen -->
+<nav class="fixed top-0 left-0 w-full px-8 h-20 flex justify-between items-center z-50 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-[#b8860b]/20 shadow-[0_4px_30px_rgba(0,0,0,0.8)] opacity-20 pointer-events-none">
+<div class="text-2xl font-serif italic tracking-wider font-bold text-[#b8860b] drop-shadow-[0_0_8px_rgba(184,134,11,0.6)]">Yellow Path Chronicles</div>
+<div class="flex gap-6">
+<span class="material-symbols-outlined text-[#2c2c2c]" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-[#2c2c2c]" data-icon="person_pin">person_pin</span>
+</div>
+</nav>
+</body></html>

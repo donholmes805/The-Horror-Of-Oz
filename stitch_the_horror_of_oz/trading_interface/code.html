@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;family=Inter:wght@400;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+        }
+        .gothic-panel {
+            position: relative;
+            background-color: #2c2c2c;
+            border: 1px solid rgba(184, 134, 11, 0.2);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .gothic-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+            pointer-events: none;
+        }
+        .brass-border {
+            border: 1px solid #b8860b;
+        }
+        .yellow-path-progress {
+            background: linear-gradient(90deg, #b8860b 0%, #ffd700 50%, #b8860b 100%);
+            box-shadow: 0 0 10px #b8860b;
+        }
+        .vignette {
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+        }
+        body {
+            background-color: #0a0a0a;
+            color: #e5e2e1;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-container-highest": "#353434",
+                        "on-primary-container": "#7b7979",
+                        "inverse-on-surface": "#313030",
+                        "surface-variant": "#353434",
+                        "surface-container-lowest": "#0e0e0e",
+                        "background": "#141313",
+                        "on-primary": "#313030",
+                        "tertiary-fixed": "#e6e1df",
+                        "on-background": "#e5e2e1",
+                        "secondary": "#c8c6c5",
+                        "surface-container": "#201f1f",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-tertiary-container": "#7c7977",
+                        "primary-fixed": "#e5e2e1",
+                        "tertiary-container": "#0b0a09",
+                        "tertiary-fixed-dim": "#cac6c3",
+                        "surface-bright": "#3a3939",
+                        "on-secondary-fixed-variant": "#474747",
+                        "on-tertiary": "#32302f",
+                        "surface": "#141313",
+                        "on-secondary": "#303030",
+                        "on-surface-variant": "#c4c7c7",
+                        "surface-container-high": "#2b2a2a",
+                        "inverse-surface": "#e5e2e1",
+                        "on-secondary-container": "#b6b5b4",
+                        "on-error": "#690005",
+                        "on-tertiary-fixed": "#1d1b1a",
+                        "on-tertiary-fixed-variant": "#484645",
+                        "on-surface": "#e5e2e1",
+                        "surface-tint": "#c9c6c5",
+                        "outline": "#8e9192",
+                        "outline-variant": "#444748",
+                        "secondary-container": "#474747",
+                        "surface-dim": "#141313",
+                        "inverse-primary": "#5f5e5e",
+                        "error-container": "#93000a",
+                        "on-primary-fixed-variant": "#474646",
+                        "secondary-fixed": "#e4e2e1",
+                        "surface-container-low": "#1c1b1b",
+                        "on-primary-fixed": "#1c1b1b",
+                        "primary-fixed-dim": "#c9c6c5",
+                        "error": "#ffb4ab",
+                        "on-error-container": "#ffdad6",
+                        "primary": "#c9c6c5",
+                        "tertiary": "#cac6c3",
+                        "primary-container": "#0a0a0a"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Newsreader"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Newsreader"],
+                        "body-lg": ["Newsreader"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                        "headline-md": ["32px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-body-lg text-on-surface bg-surface-container-lowest min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-[#b8860b]/20 docked full-width top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.8)] flex justify-between items-center w-full px-8 h-20 fixed">
+<div class="text-2xl font-bold text-[#b8860b] drop-shadow-[0_0_8px_rgba(184,134,11,0.6)] font-serif italic tracking-wider">
+            Yellow Path Chronicles
+        </div>
+<div class="hidden md:flex items-center space-x-8">
+<nav class="flex space-x-6 font-serif italic tracking-wider text-sm">
+<a class="text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b] transition-all duration-500" href="#">DASHBOARD</a>
+<a class="text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b] transition-all duration-500" href="#">CAMPAIGN</a>
+<a class="text-[#b8860b] border-b-2 border-[#b8860b] transition-all duration-500" href="#">TRADING</a>
+<a class="text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b] transition-all duration-500" href="#">MARKETPLACE</a>
+</nav>
+<div class="flex space-x-4 text-[#b8860b]">
+<span class="material-symbols-outlined cursor-pointer hover:drop-shadow-[0_0_5px_#b8860b] transition-all">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:drop-shadow-[0_0_5px_#b8860b] transition-all">person_pin</span>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Desktop Only) -->
+<aside class="hidden lg:flex flex-col h-screen fixed left-0 top-0 pt-24 pb-8 bg-[#0a0a0a] border-r border-[#b8860b]/10 shadow-[10px_0_30px_rgba(0,0,0,0.5)] w-64 z-40">
+<div class="px-6 mb-10">
+<div class="flex items-center space-x-3 mb-4">
+<div class="w-10 h-10 rounded-full border border-[#b8860b]/40 overflow-hidden">
+<img alt="Chronicle Keeper Avatar" data-alt="A dark, moody portrait of a Victorian-era keeper with pale skin and sharp features, set against a backdrop of swirling dark mists. The lighting is low-key, highlighting high cheekbones and intense, glowing eyes that reflect an ancient antique gold hue. The overall mood is gothic and mysterious, echoing the decaying prestige of an old, haunted world." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVGLOC1TrfF2bVJBSnQQo3L08KTQW7AupB95xpr-t8dy4U3WQG828FfeeMx6CY8gzuo4kmVGJUqZLisdwsZujFzqxzPIwMsKNi5nbB2fumXwT34CSNWhHxG7jjcQPzM5zVD3IUUX1UHy68pmM-gKMHcOImMOcCybkJRbhMMc1DgWV4VWcVBd37o8fA6LX1zeFPkmVknVQWYEDR0YhmZjGTEEwXhuEnO9cU9EeZr9YGXosi0KVzmtal-CFiOXPaysETtPxV1Gunxx4F"/>
+</div>
+<div>
+<p class="font-serif uppercase tracking-widest text-[10px] text-[#b8860b]">Chronicle Keeper</p>
+<p class="text-[10px] text-on-primary-container">Level 42 | 1,200 Shards</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-2 px-4">
+<a class="flex items-center space-x-3 px-4 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">dashboard</span> <span>Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">explore</span> <span>Campaign</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#b8860b] bg-[#2c2c2c]/30 shadow-[inset_0_0_10px_rgba(184,134,11,0.2)] font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">swap_horiz</span> <span>Trading</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">style</span> <span>Cards</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">auto_stories</span> <span>Library</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined">storefront</span> <span>Marketplace</span>
+</a>
+</nav>
+<div class="px-4 mt-auto border-t border-[#b8860b]/10 pt-4 space-y-2">
+<a class="flex items-center space-x-3 px-4 py-2 text-[#4a4a4a] hover:text-[#b8860b] text-xs font-serif uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">settings</span> <span>Settings</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-2 text-[#4a4a4a] hover:text-[#b8860b] text-xs font-serif uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">help_outline</span> <span>Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:ml-64 pt-24 pb-20 px-4 md:px-8 max-w-screen-2xl mx-auto">
+<!-- Header & Player Search -->
+<div class="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-[#b8860b]/20 pb-6 gap-6">
+<div>
+<h1 class="font-display-lg text-display-lg text-[#b8860b] mb-2">Arcane Exchange</h1>
+<p class="font-serif italic text-on-primary-container">Barter with fellow souls across the misty plains.</p>
+</div>
+<div class="relative w-full md:w-96">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b8860b]/60">search</span>
+<input class="w-full bg-[#0a0a0a] border-b border-[#b8860b]/40 focus:border-[#b8860b] focus:ring-0 text-[#e5e2e1] pl-12 pr-4 py-3 font-serif italic tracking-wide" placeholder="Search for a Soul to trade..." type="text"/>
+</div>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+<!-- Trading Pane (Split View) -->
+<div class="xl:col-span-8 space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- My Offer -->
+<div class="gothic-panel rounded-lg p-6 border-l-2 border-l-[#b8860b]">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-serif uppercase tracking-widest text-[#b8860b] text-sm flex items-center gap-2">
+<span class="material-symbols-outlined">person</span> My Offer
+                            </h3>
+<span class="text-[10px] text-on-primary-container uppercase">3 / 5 Slots</span>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<!-- Card Item -->
+<div class="relative group aspect-[2/3] bg-[#0a0a0a] border border-[#b8860b]/30 rounded overflow-hidden cursor-pointer hover:border-[#b8860b] transition-all">
+<img alt="Mechanical Sentinel Card" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A detailed gothic tarot card depicting a mechanical flying monkey with rusted brass wings and glowing red eyes. The card's border is ornate scorched gold with intricate filigree. The atmosphere is dark and smoky, reflecting the Victorian-industrial decay of an alternate Oz. Muted colors of deep amber and obsidian dominate the frame." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVz9oE_Rti3ZBQoeevkPpLnPgzM1AiQWIQba72cFCPcspXmT5BHh4Zy1Fir6fqi64B7YkD-InRRytmi75cDPXDy4LbdjtoXAy0McL0ScNuFitImogsPI8Q6hPZo-v5gmbRDTb7LCK7LV0AC6pd_rzO0KhtV0P_5xjavmPDOqIlr-iuPMR_DljrpvlPmq_mWRFK1Zl3GRN_UYmAqA4GDAk-lo_MALA0-JJq00IOdpwp-Qz5Cdu7Mueo5UkFUuIFlTKpp_TK6d9MG3O6"/>
+<div class="absolute bottom-0 left-0 right-0 bg-black/80 p-1 text-[8px] text-center uppercase tracking-tighter">Sentinel</div>
+</div>
+<div class="relative group aspect-[2/3] bg-[#0a0a0a] border border-[#b8860b]/30 rounded overflow-hidden cursor-pointer hover:border-[#b8860b] transition-all">
+<img alt="City of Echoes Card" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A dark fantasy card illustration of a shattered crystal ball containing a tiny, decaying emerald city. Dark purple shadows and swirling black ink effects surround the crystal. The card frame is heavy wrought iron with subtle blood-red highlights at the corners. High contrast, cinematic lighting with a focus on tactile textures like cracked glass and cold metal." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFPkR8NTGTHyAfTm5g-qf45fW04D2GPMw4eJAUrIhJCW5Ijj5vpGiq4A4PSBQL_5MCMKFWP5cyBD2X5yJAQ9YA-xIj-liHS4TKwxNsoPmDvNXwE49msjVZkQAETHAxaclyZyGmOjHVO7WzLl33H5O9CCMf3GRQ7CE5kCFZeRtb2GBwqGej6Ugrv1BOSLRjS90wUQy-yTxFeCu7tP2Cb7VcsCzjC-smOkJ_A3BC7xLnQneAVapCIoriE2vRmTLi6txngt6_svX0zVaN"/>
+<div class="absolute bottom-0 left-0 right-0 bg-black/80 p-1 text-[8px] text-center uppercase tracking-tighter">Echoes</div>
+</div>
+<!-- Empty Slot -->
+<div class="aspect-[2/3] border-2 border-dashed border-[#2c2c2c] rounded flex items-center justify-center text-[#2c2c2c] hover:text-[#b8860b]/40 transition-colors">
+<span class="material-symbols-outlined">add_circle</span>
+</div>
+</div>
+</div>
+<!-- Their Request -->
+<div class="gothic-panel rounded-lg p-6 border-l-2 border-l-[#8b0000]">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-serif uppercase tracking-widest text-[#8b0000] text-sm flex items-center gap-2">
+<span class="material-symbols-outlined">group</span> Their Request
+                            </h3>
+<span class="text-[10px] text-on-primary-container uppercase">Target: Malakor_99</span>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<div class="relative group aspect-[2/3] bg-[#0a0a0a] border border-[#8b0000]/30 rounded overflow-hidden cursor-pointer hover:border-[#8b0000] transition-all">
+<img alt="The Hollow Man Card" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A gothic card depicting an ancient, weathered scarecrow with a stitched-together burlap face and hollow, glowing yellow eyes. It holds a jagged silver scythe. The background is a harvest moon obscured by thick black clouds. The aesthetic is gritty and visceral, with sharp details on the fabric texture and metallic sheen of the blade. Deep shadows and a haunting amber glow." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCx8qdIraF3RqRilpcizuPMDrE46XnjVjT-3ZDA6SCPEl_GZiDTeSUwfDSiCIg0U_VsID0WKJ938tcdrtOx1egkahyYM8zf0PTy-KjrewaFXrZgHd43J7OI90rdVTj2MsW42JYblb4KPUwqbnXzEBx7lNmR4zufnDZjTHLX0WTW2jVHQe-8CnaDy6XBP7hEI_4EmdlHYungwMtOLtxZSbUu4e-TpOSDQ8pvgp7nk6mUvh_gcTN_vSLrl2YezSyFTF8H799YNKK0sJs-"/>
+<div class="absolute bottom-0 left-0 right-0 bg-black/80 p-1 text-[8px] text-center uppercase tracking-tighter">Hollow Man</div>
+</div>
+<!-- Pending Slot -->
+<div class="aspect-[2/3] border-2 border-dashed border-[#2c2c2c] rounded flex flex-col items-center justify-center text-[#2c2c2c] p-2 text-center">
+<span class="material-symbols-outlined text-sm">pending</span>
+<span class="text-[8px] mt-1 uppercase">Awaiting Selection</span>
+</div>
+<div class="aspect-[2/3] border-2 border-dashed border-[#2c2c2c] rounded flex items-center justify-center text-[#2c2c2c]">
+<span class="material-symbols-outlined text-sm">lock</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Tradable Inventory Grid -->
+<div class="gothic-panel rounded-lg p-8">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline-md text-[#b8860b]">Tradable Inventory</h2>
+<div class="flex gap-4">
+<select class="bg-[#0a0a0a] border-none text-[10px] font-serif uppercase tracking-widest text-on-primary-container focus:ring-0">
+<option>Rarity: All</option>
+<option>Legendary</option>
+<option>Cursed</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+<!-- Inventory Card 1 -->
+<div class="group relative">
+<div class="aspect-[2/3] border border-[#b8860b]/20 bg-[#0a0a0a] rounded overflow-hidden transition-all group-hover:shadow-[0_0_15px_rgba(184,134,11,0.3)]">
+<img alt="Clockwork Heart" class="w-full h-full object-cover" data-alt="A dark fantasy illustration of an ornate, broken clockwork heart made of dark brass and rubies, leaking black ink. The heart is suspended by thin silver chains. The background is a void of deep charcoal fog. The card's aesthetic is cinematic minimalism with high-fidelity textures of worn metal and precious gems. Subtle pulses of red light emanate from the rubies." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAybIC02qjKjpApSd8Rj5OL8nh6t03Nqb9YTHtIXTTSDIWAG-q9IEkQyJP3B1kFkf5ou62cWSshPkPqUmrU4OwOAs7xKc7sV7f50m4mQwH10qjHsDfoPov1mL4lw99_BoFB__0Q6IvLn-fsRaOX31OdVl5g2MH_bF5YtzvK2HMHfZH27f_6xu2btc1jiTHF8326p1dYjsFXrGY42Y14Rp1wbT9xMDxEB1KprJ4Kc0fny67r-EKtxMYbx0f1dPXABdWyLHGNjaIy-k7"/>
+<div class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="bg-[#b8860b] text-black px-4 py-1 text-[10px] font-serif uppercase font-bold tracking-widest hover:bg-[#ffd700] transition-colors">Add to Offer</button>
+</div>
+</div>
+<p class="mt-2 text-[10px] font-serif uppercase tracking-widest text-center">Clockwork Heart</p>
+</div>
+<!-- Inventory Card 2 (Locked) -->
+<div class="group relative">
+<div class="aspect-[2/3] border border-gray-800 bg-[#0a0a0a] rounded overflow-hidden grayscale brightness-50">
+<img alt="Witch's Shadow" class="w-full h-full object-cover" data-alt="A terrifying depiction of a wicked witch's shadow cast upon a crumbling stone wall. The shadow is elongated and monstrous, with claw-like fingers. The wall is covered in glowing yellow moss. High contrast lighting with a heavy cinematic grain. The visual style is unsettling and gothic, with an emphasis on darkness and light play." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdrouSraSPraV0X8iGA31IulL08Q4PAXrQZTG9NMUPQw3u7cmG5xUZq0DAiAfyQl4gABqLued9a5xyIMgxXlu4nPTJWW-OTHxRFoGij_jDtpyp1QNBMa7VKk_WD90Ge5UP_w7CHnKY6x3tF-kvkYrbBtqHpFpkcH0wXmEvGAKQUuxBxc0Eo_6HPiLcKeHMm0VHpMAYFeZHCAtJ4LkFJs2Eo2oewbh9IoIoqAxU-QWSZ-i5JqY6-PZViN1CGJYrb5GrxYxt29FqDFOF"/>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-red-500">
+<span class="material-symbols-outlined text-4xl mb-2">lock_clock</span>
+<p class="text-[8px] font-serif uppercase tracking-widest px-2 text-center">Locked until 12.24.24</p>
+</div>
+</div>
+<p class="mt-2 text-[10px] font-serif uppercase tracking-widest text-center text-gray-700">Witch's Shadow</p>
+</div>
+<!-- Inventory Card 3 -->
+<div class="group relative">
+<div class="aspect-[2/3] border border-[#b8860b]/20 bg-[#0a0a0a] rounded overflow-hidden transition-all group-hover:shadow-[0_0_15px_rgba(184,134,11,0.3)]">
+<img alt="The Twisted Path" class="w-full h-full object-cover" data-alt="A surreal card featuring a path made of glowing, cracked yellow bricks leading into a dense, dark forest of twisted trees. The light is bioluminescent and sickly, casting long blue-tinted shadows. The frame is weathered stone with carved runes. The mood is a mix of dread and wonder, with intricate environmental details and a foggy atmospheric perspective." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBym0Px_CI9XmT3fLI-EwI12oVz7158Fg4d0yZ-C5WRyvOOseZ9tXNIajSYkOyofsQDzzGnmEixazETwa6PHClTP4kXQldXhYlAtF1E7bCuSTZRhwgwb1eTrpO-ucv2TxItoWmHergOEp8ol4OegSftNVTu1dOw2EhLuTucHZGbrivr0sayTGdRevX6VGlkIPQrJaO0yp2MPl5igPf-L1H7bEpB4vPp0vQrHHZvdQrb90arH9-GnUHooBRMMggfNDQXOf6gOpDfLzrc"/>
+<div class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="bg-[#b8860b] text-black px-4 py-1 text-[10px] font-serif uppercase font-bold tracking-widest hover:bg-[#ffd700] transition-colors">Add to Offer</button>
+</div>
+</div>
+<p class="mt-2 text-[10px] font-serif uppercase tracking-widest text-center">Twisted Path</p>
+</div>
+<!-- Inventory Card 4 -->
+<div class="group relative">
+<div class="aspect-[2/3] border border-[#b8860b]/20 bg-[#0a0a0a] rounded overflow-hidden transition-all group-hover:shadow-[0_0_15px_rgba(184,134,11,0.3)]">
+<img alt="Silver Slippers" class="w-full h-full object-cover" data-alt="A haunting card showing a pair of silver slippers resting on a velvet cushion that is decaying and covered in cobwebs. The slippers glisten with a cold, metallic light. The setting is a ruined palace ballroom with dust motes dancing in shafts of moonlight. Cinematic, moody lighting with an focus on the contrast between luxury and rot. Deep reds and cold silvers." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdp-gqL9clrqBDCNGPfEK2hX3BG8u6laam7I7rjR5_5NgJL8k8Cpeh6qs0T1OMXZFuWYG3y-6_o1NSekAwUGNWKFpthl7HqX26D0qqduAOC47lWn5QqeX6Q0SiEtOSfnBuwOBJdSHw3vQ52NWPNcLa_0GlaxKueUAKgRHPb_vbBy0ZF9r0tSv3X7ZPZ4t1RWxM0zDCina17LK4knOhFM-ZTBz6zOg4kEkfLZedrloXymmNEMSy7gFL85UuT6yaJPiudd7vxM74A4il"/>
+<div class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="bg-[#b8860b] text-black px-4 py-1 text-[10px] font-serif uppercase font-bold tracking-widest hover:bg-[#ffd700] transition-colors">Add to Offer</button>
+</div>
+</div>
+<p class="mt-2 text-[10px] font-serif uppercase tracking-widest text-center">Silver Slippers</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar Controls -->
+<div class="xl:col-span-4 space-y-8">
+<!-- Trade Summary -->
+<div class="gothic-panel rounded-lg border border-[#b8860b] p-8 shadow-[0_0_30px_rgba(184,134,11,0.1)]">
+<h2 class="font-headline-md text-[#b8860b] mb-6 text-center">Finalize Ritual</h2>
+<div class="space-y-4 mb-8">
+<div class="flex justify-between text-xs font-serif uppercase tracking-widest">
+<span class="text-on-primary-container">Giving:</span>
+<span>2 Items + 50 Shards</span>
+</div>
+<div class="flex justify-between text-xs font-serif uppercase tracking-widest">
+<span class="text-on-primary-container">Receiving:</span>
+<span>1 Item</span>
+</div>
+<div class="h-px bg-[#b8860b]/20 w-full"></div>
+<div class="flex justify-between text-sm font-serif uppercase tracking-widest font-bold">
+<span class="text-[#b8860b]">Balance Shift:</span>
+<span class="text-red-500">-50 Shards</span>
+</div>
+</div>
+<button class="w-full bg-[#b8860b] hover:bg-[#ffd700] text-black font-serif uppercase font-extrabold tracking-widest py-4 rounded shadow-[0_0_15px_rgba(184,134,11,0.5)] transition-all active:scale-95">
+                        Initiate Trade Offer
+                    </button>
+<p class="mt-4 text-[10px] text-center text-on-primary-container font-serif italic">The ritual cannot be undone once the blood is spilled.</p>
+</div>
+<!-- Trade History Log -->
+<div class="gothic-panel rounded-lg p-6">
+<h3 class="font-serif uppercase tracking-widest text-[#b8860b] text-xs mb-4 border-b border-[#b8860b]/10 pb-2">Recent Chronicles</h3>
+<div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+<!-- Log Entry 1 -->
+<div class="flex items-start gap-3 border-b border-[#2c2c2c] pb-3">
+<span class="material-symbols-outlined text-green-700 text-sm mt-1">check_circle</span>
+<div>
+<p class="text-[10px] font-bold text-on-surface">Successful Barter with <span class="text-[#b8860b]">Glinda_Vex</span></p>
+<p class="text-[9px] text-on-primary-container">Exchanged "Lion's Courage" for "Tin Soul".</p>
+<p class="text-[8px] text-[#4a4a4a] mt-1 italic">2 hours ago</p>
+</div>
+</div>
+<!-- Log Entry 2 -->
+<div class="flex items-start gap-3 border-b border-[#2c2c2c] pb-3">
+<span class="material-symbols-outlined text-red-700 text-sm mt-1">cancel</span>
+<div>
+<p class="text-[10px] font-bold text-on-surface">Offer Rejected by <span class="text-[#b8860b]">Wizard_Shadow</span></p>
+<p class="text-[9px] text-on-primary-container">The price was deemed insufficient.</p>
+<p class="text-[8px] text-[#4a4a4a] mt-1 italic">Yesterday</p>
+</div>
+</div>
+<!-- Log Entry 3 -->
+<div class="flex items-start gap-3 border-b border-[#2c2c2c] pb-3">
+<span class="material-symbols-outlined text-[#b8860b] text-sm mt-1">history</span>
+<div>
+<p class="text-[10px] font-bold text-on-surface">Expired Ritual</p>
+<p class="text-[9px] text-on-primary-container">Offer to <span class="text-[#b8860b]">Munchkin_King</span> dissolved into mist.</p>
+<p class="text-[8px] text-[#4a4a4a] mt-1 italic">3 days ago</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 pb-safe bg-[#0a0a0a]/95 backdrop-blur-md border-t border-[#8b0000]/30 shadow-[0_-10px_40px_rgba(0,0,0,0.9)] z-50">
+<a class="flex flex-col items-center justify-center text-gray-600 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-serif text-[10px] uppercase">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-serif text-[10px] uppercase">Campaign</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#b8860b] drop-shadow-[0_0_10px_rgba(184,134,11,0.8)] active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">swap_horiz</span>
+<span class="font-serif text-[10px] uppercase">Trading</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">style</span>
+<span class="font-serif text-[10px] uppercase">Cards</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span class="font-serif text-[10px] uppercase">Market</span>
+</a>
+</nav>
+<!-- Atmospheric Vignette -->
+<div class="fixed inset-0 pointer-events-none vignette z-[100]"></div>
+</body></html>

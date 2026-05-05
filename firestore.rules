@@ -1,0 +1,94 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'owner'];
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+      
+      // Subcollection for cards
+      match /playerCards/{cardId} {
+        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+        allow write: if isAdmin(); // Only Admin SDK (API routes) can transfer cards
+      }
+    }
+
+    // Player stats and progress
+    match /playerStats/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow write: if isAuthenticated() && isOwner(userId);
+    }
+    
+    match /playerProgress/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow write: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Master Game Data
+    match /cards/{cardId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Books and chapters
+    match /books/{bookId} {
+      allow read: if true;
+      allow write: if isAdmin();
+      
+      match /chapters/{chapterId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+
+    // Trading System
+    match /trades/{tradeId} {
+      allow read: if isAuthenticated() && (request.auth.uid in resource.data.participants);
+      allow create: if isAuthenticated() && (request.auth.uid == request.resource.data.senderId);
+      allow update: if isAuthenticated() && (request.auth.uid in resource.data.participants);
+      allow delete: if isAdmin();
+    }
+
+    // Marketplace
+    match /marketplace/{listingId} {
+      allow read: if true;
+      allow create: if isAuthenticated(); // API route handles validation
+      allow update: if isAuthenticated() && (resource.data.sellerId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Audit and Transaction Logs
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /transactions/{txId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.buyerId || request.auth.uid == resource.data.sellerId || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}

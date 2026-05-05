@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #050505;
+  --color-foreground: #f4ead7;
+  
+  --color-obsidian: #050505;
+  --color-charcoal: #0d0d0f;
+  --color-panel: #141114;
+  
+  --color-primary: #c89b2c;
+  --color-primary-accent: #f4c542;
+  --color-primary-foreground: #050505;
+  
+  --color-secondary: #8b1111;
+  --color-secondary-glow: #c21f1f;
+  --color-secondary-foreground: #f4ead7;
+  
+  --color-muted: #1c1c1f;
+  --color-muted-foreground: #a7a7a7;
+  
+  --color-accent-emerald: #103d32;
+  --color-bone: #f4ead7;
+  
+  --color-border-gold: rgba(200, 155, 44, 0.2);
+  --color-border-blood: rgba(139, 17, 17, 0.3);
+  
+  --font-serif: var(--font-newsreader), "Cormorant Garamond", "Cinzel", serif;
+  --font-sans: var(--font-inter), sans-serif;
+  
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 3rem;
+}
+
+@layer base {
+  *, ::after, ::before {
+    border-color: var(--color-border-gold);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans); /* Use Inter for body as requested */
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6, .font-serif {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Glassmorphism & Modern Panels */
+@utility glass-panel {
+  background: rgba(20, 17, 20, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(200, 155, 44, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+}
+
+@utility gothic-panel {
+  background: linear-gradient(145deg, #141114, #0d0d0f);
+  border: 1px solid rgba(200, 155, 44, 0.15);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.8);
+}
+
+@utility premium-card {
+  @apply gothic-panel rounded-2xl transition-all duration-500 hover:-translate-y-2 hover:border-primary/40 hover:shadow-[0_20px_50px_rgba(200,155,44,0.1)];
+}
+
+/* Modern Buttons */
+@utility premium-button {
+  @apply relative overflow-hidden px-8 py-3 rounded-full font-bold uppercase tracking-widest text-xs transition-all duration-300 active:scale-95;
+}
+
+@utility premium-button-gold {
+  background: linear-gradient(135deg, #c89b2c 0%, #f4c542 50%, #c89b2c 100%);
+  background-size: 200% 100%;
+  color: #050505;
+  box-shadow: 0 10px 20px rgba(200, 155, 44, 0.2), inset 0 2px 2px rgba(255, 255, 255, 0.2);
+
+  &:hover {
+    background-position: 100% 0;
+    box-shadow: 0 15px 30px rgba(200, 155, 44, 0.4);
+  }
+}
+
+@utility premium-button-dark {
+  @apply glass-panel text-primary border-primary/20 hover:border-primary/60 hover:text-primary-accent;
+}
+
+@utility premium-button-red {
+  background: linear-gradient(135deg, #8b1111 0%, #c21f1f 100%);
+  color: white;
+  box-shadow: 0 10px 20px rgba(139, 17, 17, 0.2);
+}
+
+/* Cinematic Effects */
+@utility vignette-overlay {
+  background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.9) 100%);
+  @apply pointer-events-none absolute inset-0;
+}
+
+@utility cinematic-glow {
+  box-shadow: 0 0 30px rgba(200, 155, 44, 0.2);
+}
+
+@utility blood-glow {
+  box-shadow: 0 0 30px rgba(139, 17, 17, 0.3);
+}
+
+@utility gold-gradient-text {
+  background: linear-gradient(to bottom, #f4c542, #c89b2c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@utility animated-fog {
+  mask-image: linear-gradient(to top, rgba(0,0,0,1), transparent);
+  filter: blur(40px);
+  @apply absolute bottom-0 left-0 right-0 h-1/2 opacity-30 pointer-events-none;
+}
+
+/* Card Rarity Glows */
+@utility rarity-starter { border-color: #a7a7a7; box-shadow: 0 0 15px rgba(167, 167, 167, 0.1); }
+@utility rarity-common { border-color: #555; }
+@utility rarity-uncommon { border-color: #103d32; box-shadow: 0 0 15px rgba(16, 61, 50, 0.2); }
+@utility rarity-rare { border-color: #2c6eb8; box-shadow: 0 0 20px rgba(44, 110, 184, 0.3); }
+@utility rarity-epic { border-color: #8b1111; box-shadow: 0 0 25px rgba(139, 17, 17, 0.4); }
+@utility rarity-legendary { border-color: #c89b2c; box-shadow: 0 0 35px rgba(200, 155, 44, 0.5); }
+@utility rarity-founder { border-color: #f4c542; animation: gold-pulse 2s infinite ease-in-out; }
+
+@keyframes gold-pulse {
+  0% { box-shadow: 0 0 20px rgba(244, 197, 66, 0.4); }
+  50% { box-shadow: 0 0 40px rgba(244, 197, 66, 0.7); }
+  100% { box-shadow: 0 0 20px rgba(244, 197, 66, 0.4); }
+}
+
+/* Scrollbar Modernization */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+::-webkit-scrollbar-thumb {
+  background: #1c1c1f;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c89b2c;
+}
+

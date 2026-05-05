@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;family=Inter:wght@400;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+        }
+        .gothic-panel {
+            background: linear-gradient(135deg, rgba(44, 44, 44, 0.8) 0%, rgba(10, 10, 10, 0.95) 100%);
+            border: 1px solid rgba(184, 134, 11, 0.2);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .vignette {
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+        }
+        .cracked-texture {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10L20 40L10 60L30 80' stroke='%23b8860b' stroke-width='0.1' fill='none'/%3E%3C/svg%3E");
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "surface-container-highest": "#353434",
+                      "on-primary-container": "#7b7979",
+                      "inverse-on-surface": "#313030",
+                      "surface-variant": "#353434",
+                      "surface-container-lowest": "#0e0e0e",
+                      "background": "#141313",
+                      "on-primary": "#313030",
+                      "tertiary-fixed": "#e6e1df",
+                      "on-background": "#e5e2e1",
+                      "secondary": "#c8c6c5",
+                      "surface-container": "#201f1f",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "on-tertiary-container": "#7c7977",
+                      "primary-fixed": "#e5e2e1",
+                      "tertiary-container": "#0b0a09",
+                      "tertiary-fixed-dim": "#cac6c3",
+                      "surface-bright": "#3a3939",
+                      "on-secondary-fixed-variant": "#474747",
+                      "on-tertiary": "#32302f",
+                      "surface": "#141313",
+                      "on-secondary": "#303030",
+                      "on-surface-variant": "#c4c7c7",
+                      "surface-container-high": "#2b2a2a",
+                      "inverse-surface": "#e5e2e1",
+                      "on-secondary-container": "#b6b5b4",
+                      "on-error": "#690005",
+                      "on-tertiary-fixed": "#1d1b1a",
+                      "on-tertiary-fixed-variant": "#484645",
+                      "on-surface": "#e5e2e1",
+                      "surface-tint": "#c9c6c5",
+                      "outline": "#8e9192",
+                      "outline-variant": "#444748",
+                      "secondary-container": "#474747",
+                      "surface-dim": "#141313",
+                      "inverse-primary": "#5f5e5e",
+                      "error-container": "#93000a",
+                      "on-primary-fixed-variant": "#474646",
+                      "secondary-fixed": "#e4e2e1",
+                      "surface-container-low": "#1c1b1b",
+                      "on-primary-fixed": "#1c1b1b",
+                      "primary-fixed-dim": "#c9c6c5",
+                      "error": "#ffb4ab",
+                      "on-error-container": "#ffdad6",
+                      "primary": "#c9c6c5",
+                      "tertiary": "#cac6c3",
+                      "primary-container": "#0a0a0a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "display-lg": ["Newsreader"],
+                      "label-sm": ["Inter"],
+                      "headline-md": ["Newsreader"],
+                      "body-lg": ["Newsreader"]
+              },
+              "fontSize": {
+                      "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                      "headline-md": ["32px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body-lg selection:bg-[#b8860b]/30">
+<!-- TopNavBar -->
+<header class="fixed top-0 z-50 w-full px-8 h-20 flex justify-between items-center bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-[#b8860b]/20 shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all duration-500 ease-in-out">
+<div class="text-2xl font-bold text-[#b8860b] drop-shadow-[0_0_8px_rgba(184,134,11,0.6)] font-serif italic tracking-wider">
+            Yellow Path Chronicles
+        </div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-8">
+<a class="text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b] transition-all duration-500" href="#">Dashboard</a>
+<a class="text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b] transition-all duration-500" href="#">Library</a>
+<a class="text-[#b8860b] border-b-2 border-[#b8860b] transition-all duration-500" href="#">Membership</a>
+</nav>
+<div class="flex items-center gap-4 text-[#b8860b]">
+<span class="material-symbols-outlined cursor-pointer hover:drop-shadow-[0_0_5px_#b8860b]">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:drop-shadow-[0_0_5px_#b8860b]">person_pin</span>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="hidden lg:flex flex-col h-screen fixed left-0 top-0 pt-24 pb-8 w-64 bg-[#0a0a0a] border-r border-[#b8860b]/10 shadow-[10px_0_30px_rgba(0,0,0,0.5)] z-40 transition-colors duration-300">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border border-[#b8860b]/50 overflow-hidden">
+<img alt="Avatar" data-alt="A dark gothic portrait of a mysterious figure in a hooded velvet cloak. The character has pale skin and piercing golden eyes, illuminated by a faint magical glow. The background is a dense, foggy forest with twisted trees under a blood-red moonlight, reflecting a cinematic horror aesthetic with deep blacks and rich gold accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9jywMXtkn20M7dxPIIlt0_mGiy2I1ZInUR3NCzEGLMjm_878n1KIqsmjfm1vfM2nuhJnBD9aimPGnk--HpKuAw4DLYhpnIT2Eag96yioiwxL0uh3mqpyMqFy3IpH6RE2Dl5pfchp60eJKDsIxp7uusUujw8hzZwID1gLJfDQ_NEKSKd0l63L2PcSK_DFiFDxcKLfK3TzN9wU_P64lAAb7X6G8u_yk5G3oOJRZF1ha0bBy6odPKf_d9VbqG-r6OELcBAKGSuxxV4J1"/>
+</div>
+<div>
+<p class="font-serif uppercase tracking-widest text-[10px] text-[#b8860b]">Chronicle Keeper</p>
+<p class="text-[9px] text-[#4a4a4a]">Level 42 | 1,200 Shards</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 px-6 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-serif uppercase tracking-widest text-xs">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-serif uppercase tracking-widest text-xs">Campaign</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-3 text-[#b8860b] bg-[#2c2c2c]/30 shadow-[inset_0_0_10px_rgba(184,134,11,0.2)]" href="#">
+<span class="material-symbols-outlined">military_tech</span>
+<span class="font-serif uppercase tracking-widest text-xs">Membership</span>
+</a>
+</nav>
+<div class="mt-auto space-y-1">
+<a class="flex items-center gap-4 px-6 py-3 text-[#4a4a4a] hover:text-[#b8860b]" href="#"><span class="material-symbols-outlined">settings</span><span class="font-serif uppercase tracking-widest text-xs">Settings</span></a>
+<a class="flex items-center gap-4 px-6 py-3 text-[#4a4a4a] hover:text-[#b8860b]" href="#"><span class="material-symbols-outlined">help_outline</span><span class="font-serif uppercase tracking-widest text-xs">Support</span></a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="lg:ml-64 pt-20 pb-24 lg:pb-12 min-h-screen relative overflow-hidden">
+<!-- Background Hero -->
+<div class="absolute inset-0 z-0 opacity-40 vignette pointer-events-none">
+<div class="w-full h-full bg-cover bg-center" data-alt="A cinematic, wide-angle shot of a decaying Emerald City seen from a distance across a cracked yellow brick road. The sky is a heavy, bruised purple and dark charcoal grey, with swirling mists rising from the ground. Ancient, gnarled trees with red leaves line the path. The lighting is low and atmospheric, emphasizing the 'decaying prestige' and Gothic horror mood of the world." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCRmNWWlBSX_hnsCkkt5b79jKbb67leRPtpqkAEXBi3pGvJzImQaLT2Nv4_NJnDhCGSNARCOznDfV4GHAHT6hLvXREYsz4zqfPT1CnvdOI1SqrB5A4YmMJwoKWxT_VhsMqPtaHkwWb6vJ2Naf3lVEva8K1hpHG-qacJKqcmUcTgd-Iiz0ysX7DoIPPHqMhOi0OLWVNk85cGZkxmeeEAaG6GgA2bJM8LcNSmazsZ7Op9Tz9kjyiMqOVt89ZW8fRP1MF8-Lv0xHry2WHf')"></div>
+</div>
+<div class="relative z-10 max-w-5xl mx-auto px-8 pt-12">
+<!-- Header Section -->
+<div class="text-center mb-16 space-y-4">
+<h1 class="font-display-lg text-display-lg text-[#b8860b] drop-shadow-[0_2px_10px_rgba(184,134,11,0.4)]">Ascend to the Inner Circle</h1>
+<p class="font-body-lg text-on-surface-variant max-w-2xl mx-auto italic">"The road is long, and the shadows grow tall. Will you carry a lantern, or let the darkness claim your story?"</p>
+</div>
+<!-- Bento Grid Benefits -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+<!-- Large Feature Card -->
+<div class="md:col-span-2 gothic-panel p-8 rounded-xl flex flex-col justify-end min-h-[300px] group transition-all hover:border-[#b8860b]/60">
+<div class="absolute top-6 right-6 opacity-20 group-hover:opacity-40 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-[#b8860b]">auto_stories</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-[#b8860b] mb-2">Unrestricted Archives</h3>
+<p class="text-on-surface-variant">Full access to the entire 'Horror of Oz' manuscript. No gated chapters, no missing secrets. Every word of the decay laid bare for your eyes only.</p>
+</div>
+<!-- Reward Card -->
+<div class="gothic-panel p-8 rounded-xl flex flex-col items-center text-center justify-center space-y-4 hover:border-[#8b0000]/60 transition-all">
+<span class="material-symbols-outlined text-5xl text-[#8b0000] drop-shadow-[0_0_8px_rgba(139,0,0,0.6)]" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+<h3 class="font-headline-md text-xl text-on-surface">Member Rewards</h3>
+<p class="text-sm text-on-surface-variant">Earn unique 'Shards of the Ruby Slippers' and cosmetic artifacts for your keeper profile.</p>
+</div>
+<!-- Audiobook Card -->
+<div class="gothic-panel p-8 rounded-xl flex flex-col justify-between hover:border-[#b8860b]/60 transition-all">
+<span class="material-symbols-outlined text-4xl text-[#b8860b]">headphones</span>
+<div>
+<h3 class="text-xl font-bold mb-1">Cursed Chronicles</h3>
+<p class="text-sm text-on-surface-variant">Audiobook chapters narrated in a haunting, cinematic style. Experience the dread through sound.</p>
+</div>
+</div>
+<!-- Bookmark Card -->
+<div class="md:col-span-2 gothic-panel p-8 rounded-xl flex flex-col md:flex-row items-center gap-8 hover:border-[#b8860b]/60 transition-all">
+<div class="w-full md:w-1/3 aspect-video bg-surface-container rounded border border-[#b8860b]/10 overflow-hidden">
+<img class="w-full h-full object-cover grayscale opacity-50 hover:grayscale-0 transition-all duration-1000" data-alt="A close-up shot of an ancient, leather-bound book lying open on a dark mahogany desk. A single brass bookmark in the shape of a key rests on the yellowed, ink-stained pages. The lighting is soft and flickering, as if from a nearby candle, casting long shadows across the textured wood. The overall mood is mysterious and scholarly." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdd0eV0tSp3frAkN132keG6iQkb6CdBCwu-jpgiXemSBrezZY8IwqM6noRPVxkTYcVcXcrBQoAf7sGa8dGdKzphXm7ZvYuxOjRl6G7fjtqc3qWDT1oF46Pe3e3ndSp-Oy_z4aKHbFV30xJOAyAJsjy189AWRYWZYCb9LXD_-mjFwllegAdf1Sr24KyPFagmLzM-pFg7HwAsiC9yimb22W5M-neHzyrs6ibCebSsZIZ87E5lmFoE5QQ_hUw5uVoVR8fp7tvhvMSNn1l"/>
+</div>
+<div class="flex-1">
+<h3 class="text-xl font-bold mb-2">Eternal Continuity</h3>
+<p class="text-sm text-on-surface-variant">Never lose your place in the fog. Seamlessly resume reading or listening across all devices with the 'Silver Whistle' sync technology.</p>
+</div>
+</div>
+</div>
+<!-- Comparison Table -->
+<div class="gothic-panel rounded-xl overflow-hidden mb-20">
+<div class="p-8 border-b border-[#b8860b]/10 bg-[#0a0a0a]">
+<h2 class="font-headline-md text-headline-md text-center text-[#b8860b]">Compare Your Fate</h2>
+</div>
+<table class="w-full text-left font-serif">
+<thead>
+<tr class="text-[#b8860b] text-xs uppercase tracking-widest bg-surface-container-high">
+<th class="p-6">Feature</th>
+<th class="p-6 text-center">Wanderer (Free)</th>
+<th class="p-6 text-center text-[#b8860b] bg-[#b8860b]/5">Chronicler (Paid)</th>
+</tr>
+</thead>
+<tbody class="text-on-surface-variant">
+<tr class="border-b border-[#b8860b]/5">
+<td class="p-6">Main Story Chapters</td>
+<td class="p-6 text-center">First 3 Only</td>
+<td class="p-6 text-center text-on-surface bg-[#b8860b]/5">Unlimited</td>
+</tr>
+<tr class="border-b border-[#b8860b]/5">
+<td class="p-6">Immersive Audiobook</td>
+<td class="p-6 text-center"><span class="material-symbols-outlined text-[#8b0000]">close</span></td>
+<td class="p-6 text-center text-on-surface bg-[#b8860b]/5"><span class="material-symbols-outlined text-[#b8860b]">check_circle</span></td>
+</tr>
+<tr class="border-b border-[#b8860b]/5">
+<td class="p-6">Progress Syncing</td>
+<td class="p-6 text-center">Manual</td>
+<td class="p-6 text-center text-on-surface bg-[#b8860b]/5">Automatic</td>
+</tr>
+<tr class="border-b border-[#b8860b]/5">
+<td class="p-6">Exclusive Artifacts</td>
+<td class="p-6 text-center"><span class="material-symbols-outlined text-[#8b0000]">close</span></td>
+<td class="p-6 text-center text-on-surface bg-[#b8860b]/5">Monthly Drops</td>
+</tr>
+<tr>
+<td class="p-6">Member Forums</td>
+<td class="p-6 text-center">View Only</td>
+<td class="p-6 text-center text-on-surface bg-[#b8860b]/5">Participate</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- CTA Section -->
+<div class="relative py-16 text-center gothic-panel rounded-2xl overflow-hidden group">
+<div class="absolute inset-0 opacity-10 pointer-events-none cracked-texture group-hover:scale-110 transition-transform duration-[20s]"></div>
+<div class="relative z-10 space-y-8">
+<div>
+<p class="font-serif uppercase tracking-[0.3em] text-[#b8860b] text-sm mb-2">Unlock the Full Chronicle</p>
+<h2 class="font-display-lg text-4xl mb-4">The path is yours to take.</h2>
+<p class="text-2xl font-serif italic text-on-surface-variant">$9.99 / Moon</p>
+</div>
+<button class="bg-[#8b0000] text-white px-12 py-4 rounded font-serif uppercase tracking-widest text-sm font-bold shadow-[0_0_20px_rgba(139,0,0,0.5)] hover:shadow-[0_0_40px_rgba(139,0,0,0.8)] hover:bg-[#a00000] transition-all transform active:scale-95 border border-[#8b0000]">
+                        Upgrade to Paid Member
+                    </button>
+<p class="text-[10px] text-on-surface-variant/60 uppercase tracking-widest">Cancel your pact at any time. The shadows will wait.</p>
+</div>
+</div>
+<!-- Flavor Text -->
+<div class="mt-20 text-center opacity-40">
+<p class="font-serif italic text-lg">"I once sought a heart, but now I find peace in the silence of these pages."</p>
+<p class="text-xs uppercase tracking-widest mt-2">— The Tin Woodman</p>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<footer class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 pb-safe bg-[#0a0a0a]/95 backdrop-blur-md border-t border-[#8b0000]/30 shadow-[0_-10px_40px_rgba(0,0,0,0.9)] z-50">
+<a class="flex flex-col items-center justify-center text-gray-600 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-serif text-[10px] uppercase">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-serif text-[10px] uppercase">Campaign</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#b8860b] drop-shadow-[0_0_10px_rgba(184,134,11,0.8)] active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+<span class="font-serif text-[10px] uppercase">Member</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-serif text-[10px] uppercase">Library</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-600 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span class="font-serif text-[10px] uppercase">Market</span>
+</a>
+</footer>
+</body></html>

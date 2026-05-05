@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Yellow Path Chronicles - Marketplace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;1,400;1,600&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+        }
+        .gothic-vignette {
+            background: radial-gradient(circle at center, transparent 0%, rgba(10, 10, 10, 0.8) 100%);
+            pointer-events: none;
+        }
+        .cracked-texture {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10L20 15L15 25L30 20L40 35L25 45L35 60L10 70L20 85' stroke='%23b8860b' stroke-width='0.1' fill='none'/%3E%3C/svg%3E");
+            opacity: 0.1;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-container-highest": "#353434",
+                        "on-primary-container": "#7b7979",
+                        "inverse-on-surface": "#313030",
+                        "surface-variant": "#353434",
+                        "surface-container-lowest": "#0e0e0e",
+                        "background": "#141313",
+                        "on-background": "#e5e2e1",
+                        "secondary": "#c8c6c5",
+                        "surface-container": "#201f1f",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-tertiary-container": "#7c7977",
+                        "primary-fixed": "#e5e2e1",
+                        "tertiary-container": "#0b0a09",
+                        "tertiary-fixed-dim": "#cac6c3",
+                        "surface-bright": "#3a3939",
+                        "on-secondary-fixed-variant": "#474747",
+                        "on-tertiary": "#32302f",
+                        "surface": "#141313",
+                        "on-secondary": "#303030",
+                        "on-surface-variant": "#c4c7c7",
+                        "surface-container-high": "#2b2a2a",
+                        "inverse-surface": "#e5e2e1",
+                        "on-secondary-container": "#b6b5b4",
+                        "on-error": "#690005",
+                        "on-tertiary-fixed": "#1d1b1a",
+                        "on-tertiary-fixed-variant": "#484645",
+                        "on-surface": "#e5e2e1",
+                        "surface-tint": "#c9c6c5",
+                        "outline": "#8e9192",
+                        "outline-variant": "#444748",
+                        "secondary-container": "#474747",
+                        "surface-dim": "#141313",
+                        "inverse-primary": "#5f5e5e",
+                        "error-container": "#93000a",
+                        "on-primary-fixed-variant": "#474646",
+                        "secondary-fixed": "#e4e2e1",
+                        "surface-container-low": "#1c1b1b",
+                        "on-primary-fixed": "#1c1b1b",
+                        "primary-fixed-dim": "#c9c6c5",
+                        "error": "#ffb4ab",
+                        "on-error-container": "#ffdad6",
+                        "primary": "#c9c6c5",
+                        "tertiary": "#cac6c3",
+                        "primary-container": "#0a0a0a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Newsreader"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Newsreader"],
+                        "body-lg": ["Newsreader"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                        "headline-md": ["32px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-lg selection:bg-[#b8860b] selection:text-black">
+<div class="fixed inset-0 gothic-vignette z-0"></div>
+<div class="fixed inset-0 cracked-texture z-0 pointer-events-none"></div>
+<!-- TopNavBar -->
+<header class="bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-[#b8860b]/20 shadow-[0_4px_30px_rgba(0,0,0,0.8)] flex justify-between items-center w-full px-8 h-20 fixed top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-bold text-[#b8860b] drop-shadow-[0_0_8px_rgba(184,134,11,0.6)] font-serif italic tracking-wider">Yellow Path Chronicles</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center gap-8 font-serif uppercase tracking-widest text-xs">
+<a class="text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b] transition-all duration-500" href="#">Dashboard</a>
+<a class="text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b] transition-all duration-500" href="#">Campaign</a>
+<a class="text-[#2c2c2c] hover:text-[#b8860b] hover:drop-shadow-[0_0_5px_#b8860b] transition-all duration-500" href="#">Cards</a>
+<a class="text-[#b8860b] border-b-2 border-[#b8860b] transition-all duration-500" href="#">Marketplace</a>
+</div>
+<div class="flex items-center gap-4 border-l border-[#b8860b]/20 pl-6 text-[#b8860b]">
+<div class="flex items-center gap-2 bg-[#2c2c2c]/30 px-3 py-1 rounded-full border border-[#b8860b]/20">
+<span class="material-symbols-outlined text-sm">monetization_on</span>
+<span class="font-bold">1,200 Shards</span>
+</div>
+<span class="material-symbols-outlined cursor-pointer hover:drop-shadow-[0_0_8px_#b8860b] transition-all" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:drop-shadow-[0_0_8px_#b8860b] transition-all" data-icon="person_pin">person_pin</span>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Desktop Only) -->
+<aside class="hidden lg:flex flex-col h-screen fixed left-0 top-0 pt-24 pb-8 w-64 bg-[#0a0a0a] border-r border-[#b8860b]/10 shadow-[10px_0_30px_rgba(0,0,0,0.5)] z-40">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full overflow-hidden border border-[#b8860b]/40">
+<img class="w-full h-full object-cover" data-alt="A highly detailed gothic portrait of a mysterious figure in a Victorian military jacket with gold piping. The character has pale skin and intense dark eyes, set against a background of swirling gray fog and deep shadows. The lighting is low-key, dramatic, and moody, emphasizing the textures of the worn fabric and the cold atmosphere of the setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBygWDtUA57_LMK2YfTJBywhXe-hKo6qBVK__tkQQtRQxG7XOljIJu1zFuOt5xQzhApItzIj5a8236a7XUicaThpEsTtOQDR3YB5f4NaCnJbYk2-Fq4Dy2zxVGx-YkG8MxwTahGsh7irFWAdur_6BVzjYg_QwvcwNvtbzqp_r9XGdU7Z7wmyURTFB7NvlSVhSQsu38x8iwGSYCb1phWpimmJUD-drJp3hTF4XULGfzo04fPL7oTA-qh0x8DYZHP4LYpe1rAfRjjqN6C"/>
+</div>
+<div>
+<h3 class="font-serif text-[#b8860b] text-sm font-bold uppercase tracking-widest">Chronicle Keeper</h3>
+<p class="text-[#4a4a4a] text-[10px] uppercase tracking-tighter">Level 42 | Master of Shards</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-2 px-3">
+<a class="flex items-center gap-4 px-4 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span> Campaign
+            </a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined" data-icon="style">style</span> Cards
+            </a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#b8860b] bg-[#2c2c2c]/30 shadow-[inset_0_0_10px_rgba(184,134,11,0.2)] font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span> Marketplace
+            </a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#4a4a4a] hover:bg-[#2c2c2c]/50 hover:text-[#b8860b] transition-colors duration-300 font-serif uppercase tracking-widest text-xs" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span> Library
+            </a>
+</nav>
+<div class="px-3 flex flex-col gap-2 mt-auto">
+<a class="flex items-center gap-4 px-4 py-3 text-[#4a4a4a] hover:text-[#b8860b] transition-colors font-serif uppercase tracking-widest text-[10px]" href="#">
+<span class="material-symbols-outlined scale-75" data-icon="settings">settings</span> Settings
+            </a>
+<div class="p-4 bg-[#8b0000]/10 border border-[#8b0000]/30 rounded-lg mx-3">
+<p class="text-[9px] text-[#ffdad6] uppercase tracking-tighter text-center italic">Marketplace fee: 7.5%</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="relative z-10 lg:pl-64 pt-24 pb-24 px-8 min-h-screen">
+<div class="max-w-7xl mx-auto">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
+<div class="max-w-2xl">
+<h1 class="font-display-lg text-display-lg text-[#b8860b] mb-4">The Bazaar of Lost Souls</h1>
+<p class="font-body-lg text-on-surface-variant opacity-80 border-l-2 border-[#b8860b]/30 pl-6">
+                        Trade the fragments of your journey across the decaying yellow bricks. Every exchange comes with a price—not just in Shards, but in the echoes of what remains.
+                    </p>
+</div>
+<div class="flex gap-4">
+<button class="bg-[#2c2c2c]/40 border border-[#b8860b]/40 hover:bg-[#b8860b]/10 text-[#b8860b] px-6 py-3 font-serif uppercase tracking-widest text-xs transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                        List My Card
+                    </button>
+<button class="bg-[#b8860b] hover:bg-[#d4a017] text-[#0a0a0a] px-8 py-3 font-bold font-serif uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(184,134,11,0.3)]">
+                        Refresh Market
+                    </button>
+</div>
+</div>
+<!-- Content Grid with Filters -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Sidebar Filters -->
+<div class="lg:col-span-3 space-y-8">
+<div class="bg-[#0e0e0e] border border-[#b8860b]/10 p-6 shadow-2xl">
+<h4 class="font-serif text-[#b8860b] text-sm font-bold uppercase tracking-widest mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="filter_alt">filter_alt</span> Refine Search
+                        </h4>
+<!-- Rarity Filter -->
+<div class="mb-8">
+<p class="text-[10px] uppercase tracking-widest text-on-primary-container mb-3">Rarity</p>
+<div class="flex flex-wrap gap-2">
+<button class="px-3 py-1 text-[10px] border border-[#4a4a4a] text-[#4a4a4a] hover:border-[#b8860b] hover:text-[#b8860b] transition-all uppercase tracking-tighter">Common</button>
+<button class="px-3 py-1 text-[10px] border border-[#b8860b] text-[#b8860b] bg-[#b8860b]/10 uppercase tracking-tighter">Rare</button>
+<button class="px-3 py-1 text-[10px] border border-[#8b0000] text-[#8b0000] hover:bg-[#8b0000]/10 transition-all uppercase tracking-tighter">Cursed</button>
+<button class="px-3 py-1 text-[10px] border border-white text-white uppercase tracking-tighter">Mythic</button>
+</div>
+</div>
+<!-- Type Filter -->
+<div class="mb-8">
+<p class="text-[10px] uppercase tracking-widest text-on-primary-container mb-3">Card Type</p>
+<div class="space-y-2">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="form-checkbox bg-black border-[#b8860b]/30 text-[#b8860b] focus:ring-0" type="checkbox"/>
+<span class="text-sm font-serif text-secondary group-hover:text-[#b8860b] transition-colors">Manifestations</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="form-checkbox bg-black border-[#b8860b]/30 text-[#b8860b] focus:ring-0" type="checkbox"/>
+<span class="text-sm font-serif text-secondary group-hover:text-[#b8860b] transition-colors">Key Objects</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="form-checkbox bg-black border-[#b8860b]/30 text-[#b8860b] focus:ring-0" type="checkbox"/>
+<span class="text-sm font-serif text-secondary group-hover:text-[#b8860b] transition-colors">Forgotten Rituals</span>
+</label>
+</div>
+</div>
+<!-- Book Filter -->
+<div class="mb-8">
+<p class="text-[10px] uppercase tracking-widest text-on-primary-container mb-3">Origin Book</p>
+<select class="w-full bg-black border-b border-[#b8860b]/30 text-[#b8860b] font-serif text-sm py-2 focus:outline-none focus:border-[#b8860b]">
+<option>The Sallow Fields</option>
+<option>Emerald Decay</option>
+<option>Clockwork Terrors</option>
+</select>
+</div>
+<div class="pt-6 border-t border-[#b8860b]/10">
+<p class="text-[10px] uppercase tracking-widest text-red-500 italic mb-2">Market Notice</p>
+<p class="text-[10px] text-[#4a4a4a] leading-relaxed">
+                                A 7.5% marketplace fee is applied to all sales. Locked cards are bound to your soul and cannot be traded.
+                            </p>
+</div>
+</div>
+</div>
+<!-- Card Grid -->
+<div class="lg:col-span-9">
+<!-- Search & Sort -->
+<div class="flex flex-col sm:flex-row gap-4 mb-8">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#4a4a4a]" data-icon="search">search</span>
+<input class="w-full bg-[#0a0a0a] border-b border-[#b8860b]/20 text-[#b8860b] pl-12 pr-4 py-3 focus:outline-none focus:border-[#b8860b] font-serif italic text-sm transition-all" placeholder="Search the chronicles..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] uppercase tracking-widest text-[#4a4a4a]">Sort by:</span>
+<select class="bg-transparent border-none text-[#b8860b] font-serif text-sm focus:ring-0">
+<option>Lowest Price</option>
+<option>Highest Price</option>
+<option>Newest Listings</option>
+</select>
+</div>
+</div>
+<!-- Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Card Item 1 (Active Listing) -->
+<div class="group relative bg-[#1c1b1b] border border-[#b8860b]/20 overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-1 hover:border-[#b8860b]/60">
+<div class="aspect-[3/4] overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[0.5] group-hover:grayscale-0" data-alt="A dark fantasy card illustration featuring a twisted, silver crown overflowing with black oil. The crown sits on a cracked pedestal of weathered yellow stone. The background is a dense, suffocating fog illuminated by a dim, sickly green light. The art style is highly detailed and painterly, evoking a sense of ancient, decaying majesty and silent horror." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJdsj7pz-mgKP29ShxDpWjH6BgIx75Hmoa74Ge7Xsjs7jPpJIzLDI7l6Mo3CX4Zt6SIN1LZAgxyCKIpH31wFYgAs89CQ32RxG1EF_jFRIEuwGRzCaz1LA6lm-XDeSXNB8MBPUYhG5O1C7f93OiS1PuhoO7fHc9Bb-L8AOTnT7vco4WJeP-Tq-T35Kc5Qkx7hvUdUlwx5r5pMs0H_Y4g2JHcPATLjakGRK2v44Ike4Yu_ZpL0EFNb1DDHxQFoCbvbCilfyJXEuOeSH2"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-80"></div>
+<div class="absolute top-3 right-3 bg-[#b8860b]/10 border border-[#b8860b] px-2 py-0.5">
+<span class="text-[9px] font-bold text-[#b8860b] uppercase tracking-widest">RARE</span>
+</div>
+</div>
+<div class="p-5 border-t border-[#b8860b]/10 relative z-10">
+<h3 class="font-serif text-[#b8860b] text-lg font-bold mb-1">Crown of the Sallow King</h3>
+<p class="text-[10px] text-[#4a4a4a] uppercase tracking-widest mb-4">Key Object | Book II</p>
+<div class="flex justify-between items-center mb-4">
+<div>
+<p class="text-[9px] text-on-primary-container uppercase tracking-tighter">Seller</p>
+<p class="text-xs font-serif text-secondary">The_Witch_of_West</p>
+</div>
+<div class="text-right">
+<p class="text-[9px] text-on-primary-container uppercase tracking-tighter">Current Price</p>
+<div class="flex items-center gap-1 text-[#b8860b]">
+<span class="material-symbols-outlined text-xs">monetization_on</span>
+<span class="font-bold">850</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-[#b8860b] text-[#0a0a0a] font-bold font-serif uppercase tracking-widest text-[10px] hover:bg-[#d4a017] transition-all">Buy Now</button>
+</div>
+</div>
+<!-- Card Item 2 (Active Listing) -->
+<div class="group relative bg-[#1c1b1b] border border-[#b8860b]/20 overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-1 hover:border-[#b8860b]/60">
+<div class="aspect-[3/4] overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[0.5] group-hover:grayscale-0" data-alt="A cinematic scene of a desolate yellow brick road disappearing into a swirling red abyss. The bricks are broken and covered in a fine layer of ash. Giant, skeletal tree branches reach out from the sides like claws. The lighting is harsh and dramatic, with deep shadows and a burning red glow on the horizon, creating a feeling of absolute isolation and dread." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDulkj6LUizl4b8h_F7W6pvo_BCIRAYFNJyJMgIhAwybnhcSYLoxniSgtvecbqRvdq8LMSb66got85YyGcDcuqs9AzeCyhr3Pvbli_oQYVFDdCKPpbqcByBhBUTXoql6heBDF9wZ5Dvm5ekyFqah_olaLFKdEgdLh6lkKRu4MAhWkxOBl681Mj0RxV1Wf1PiLA2MgsxJcJxsc73ckVtUgoYY3JzHRVANG-QfYOb0V1Q-6X2KBA7WW_iTe4HijG3u8G2LXsqHfqQghhI"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-80"></div>
+<div class="absolute top-3 right-3 bg-white/10 border border-white px-2 py-0.5">
+<span class="text-[9px] font-bold text-white uppercase tracking-widest">MYTHIC</span>
+</div>
+</div>
+<div class="p-5 border-t border-[#b8860b]/10 relative z-10">
+<h3 class="font-serif text-[#b8860b] text-lg font-bold mb-1">Echo of the Road</h3>
+<p class="text-[10px] text-[#4a4a4a] uppercase tracking-widest mb-4">Forgotten Ritual | Book I</p>
+<div class="flex justify-between items-center mb-4">
+<div>
+<p class="text-[9px] text-on-primary-container uppercase tracking-tighter">Seller</p>
+<p class="text-xs font-serif text-secondary">Amnesiac_Bard</p>
+</div>
+<div class="text-right">
+<p class="text-[9px] text-on-primary-container uppercase tracking-tighter">Current Price</p>
+<div class="flex items-center gap-1 text-[#b8860b]">
+<span class="material-symbols-outlined text-xs">monetization_on</span>
+<span class="font-bold">4,200</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-[#b8860b] text-[#0a0a0a] font-bold font-serif uppercase tracking-widest text-[10px] hover:bg-[#d4a017] transition-all">Buy Now</button>
+</div>
+</div>
+<!-- Card Item 3 (Locked Card) -->
+<div class="group relative bg-[#0a0a0a] border border-[#8b0000]/20 overflow-hidden shadow-2xl opacity-60 grayscale cursor-not-allowed">
+<div class="aspect-[3/4] overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A dark, macabre close-up of a rusted mechanical heart embedded in a tangle of thick, dark vines. The metal is pitted and scorched, with gears partially visible through gaps. Small, bioluminescent red sparks glow faintly from within the vines. The overall atmosphere is heavy with gothic horror, emphasizing the unnatural fusion of organic and mechanical decay." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_ggyEtNzsvx7SBS2JqMW4Jb2xZMliQINBH9TOQiut9xJF7k1tJ87bPrAsUYLg7ig_7Nr-IrHkmANeU_EwXV00eiL7HPLV9nUY23x3ocKWATpFM0aWIsKvZngdl1VsrP6Qtme8U6SnAoXrYT-b_hAxmcQ_EsCFyqwJNib7tN6pyREpn8g9LP46ypsQpLkNuoHBWOt9IeSzS9aCD7MeDogwn-ypXy3lGxEC37DCUQc8agbVvZ7_LI3SZo9tUXhWDY4IUyDHsyjQVnPm"/>
+<div class="absolute inset-0 bg-[#8b0000]/20 mix-blend-multiply"></div>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="bg-[#0a0a0a]/80 backdrop-blur-md border border-[#8b0000] p-4 text-center transform -rotate-12">
+<span class="material-symbols-outlined text-[#8b0000] text-3xl block mb-2" data-icon="lock" data-weight="fill" style="font-variation-settings: 'FILL' 1;">lock</span>
+<p class="text-[10px] font-serif text-[#8b0000] font-bold uppercase tracking-[0.2em]">Soul Bound</p>
+</div>
+</div>
+</div>
+<div class="p-5 border-t border-[#8b0000]/10 relative z-10">
+<h3 class="font-serif text-[#4a4a4a] text-lg font-bold mb-1">Ticking Torment</h3>
+<p class="text-[10px] text-[#2c2c2c] uppercase tracking-widest mb-4">Manifestation | Book III</p>
+<div class="flex justify-center items-center h-10 border-t border-[#8b0000]/10 mt-4">
+<p class="text-[9px] text-[#8b0000] uppercase tracking-widest italic">Non-Listable Artifact</p>
+</div>
+</div>
+</div>
+<!-- Card Item 4 (Active Listing) -->
+<div class="group relative bg-[#1c1b1b] border border-[#b8860b]/20 overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-1 hover:border-[#b8860b]/60">
+<div class="aspect-[3/4] overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[0.5] group-hover:grayscale-0" data-alt="A haunting image of a single, tattered ruby slipper abandoned in a dark, flooded cellar. The sequins on the shoe catch a glint of stray light, casting a blood-red reflection on the black, stagnant water. The walls are covered in dark, weeping mold and moss. The lighting is highly focused and cinematic, creating a stark contrast between the vibrant red shoe and the oppressive darkness of the cellar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2auWMEuMI_LRCqFW1dzH8iWylaNS92Dbj735pmrV2Wtopvz7PzEHFu7Vd29JDk3rF-3tDMSukjYnIcuxwwVsSRYQXV61prXYktMesmjTcqqdeF5PGazKFHXjByTP36-EKV5AzGmIRqo4cXtipsbHTNuwASDTdoe5HTOFyxpOGiqIVf3t2Qilhqe52Yj5paWCcdLwUz_7GOTxIehWSsFtrQFCFL0SS-J2DOhwmIMU3g7uUAw_PY9dFCWhmUTd8F8hFSyNTgJTgxshn"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-80"></div>
+<div class="absolute top-3 right-3 bg-[#4a4a4a]/10 border border-[#4a4a4a] px-2 py-0.5">
+<span class="text-[9px] font-bold text-[#4a4a4a] uppercase tracking-widest">COMMON</span>
+</div>
+</div>
+<div class="p-5 border-t border-[#b8860b]/10 relative z-10">
+<h3 class="font-serif text-[#b8860b] text-lg font-bold mb-1">The Drowned Slipper</h3>
+<p class="text-[10px] text-[#4a4a4a] uppercase tracking-widest mb-4">Key Object | Book I</p>
+<div class="flex justify-between items-center mb-4">
+<div>
+<p class="text-[9px] text-on-primary-container uppercase tracking-tighter">Seller</p>
+<p class="text-xs font-serif text-secondary">Tin_Scrap_Dealer</p>
+</div>
+<div class="text-right">
+<p class="text-[9px] text-on-primary-container uppercase tracking-tighter">Current Price</p>
+<div class="flex items-center gap-1 text-[#b8860b]">
+<span class="material-symbols-outlined text-xs">monetization_on</span>
+<span class="font-bold">120</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-[#b8860b] text-[#0a0a0a] font-bold font-serif uppercase tracking-widest text-[10px] hover:bg-[#d4a017] transition-all">Buy Now</button>
+</div>
+</div>
+<!-- Card Item 5 (Active Listing) -->
+<div class="group relative bg-[#1c1b1b] border border-[#b8860b]/20 overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-1 hover:border-[#b8860b]/60">
+<div class="aspect-[3/4] overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[0.5] group-hover:grayscale-0" data-alt="An atmospheric digital painting of a giant, glowing lantern-headed scarecrow standing in a dark, blighted cornfield. The light from the lantern head is a flickering, pale amber that illuminates the dry, withered corn stalks in sharp detail. The background is a moonless, starless sky of deep indigo and black. The mood is eerie and watchful, with a focus on the textural contrast of the rough burlap and glowing light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBI7AaE5dmfnU3MEf1O6jp4OA_7Ra3P5I0qjl8DwMiFTqNdrGLrYehxD0tVgFcJEFe9LnKyUYmaYscRhh4dAwAti-1B7b1mzAKcZtluwPdwW346GmEvh6U51DPqFM1USQ90-1jD6Sq3dnVlM5XRtk2ywWL7XmGcl3FVljlPPmPXcZiC-fygUcYIZC-TLBuDCkkHCXwrF6NvkzcORGP93uBRW7Z_J9MQCqJDlkR1NjmVLs1jV_WyWPml65cEyn2yzoSI1kpIswufalPb"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-80"></div>
+<div class="absolute top-3 right-3 bg-[#8b0000]/10 border border-[#8b0000] px-2 py-0.5">
+<span class="text-[9px] font-bold text-[#8b0000] uppercase tracking-widest">CURSED</span>
+</div>
+</div>
+<div class="p-5 border-t border-[#b8860b]/10 relative z-10">
+<h3 class="font-serif text-[#b8860b] text-lg font-bold mb-1">The Watcher's Lantern</h3>
+<p class="text-[10px] text-[#4a4a4a] uppercase tracking-widest mb-4">Manifestation | Book II</p>
+<div class="flex justify-between items-center mb-4">
+<div>
+<p class="text-[9px] text-on-primary-container uppercase tracking-tighter">Seller</p>
+<p class="text-xs font-serif text-secondary">Field_Ghost</p>
+</div>
+<div class="text-right">
+<p class="text-[9px] text-on-primary-container uppercase tracking-tighter">Current Price</p>
+<div class="flex items-center gap-1 text-[#b8860b]">
+<span class="material-symbols-outlined text-xs">monetization_on</span>
+<span class="font-bold">1,450</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-[#b8860b] text-[#0a0a0a] font-bold font-serif uppercase tracking-widest text-[10px] hover:bg-[#d4a017] transition-all">Buy Now</button>
+</div>
+</div>
+<!-- Card Item 6 (Active Listing) -->
+<div class="group relative bg-[#1c1b1b] border border-[#b8860b]/20 overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-1 hover:border-[#b8860b]/60">
+<div class="aspect-[3/4] overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[0.5] group-hover:grayscale-0" data-alt="A dark and moody architectural detail of a towering emerald gate overgrown with blackened, thorny vines. The emerald stone is cracked and dull, showing signs of severe weathering and neglect. The lighting is low and atmospheric, with a faint, ghostly green glow emanating from the cracks in the stone. The style is gothic and imposing, suggesting a once-grand entrance that has become a dangerous trap." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqqYvhrBBwooaNcHdAePggT_eJ0lNPPegpGnwoSoqboNb4uCQ8LWdRfyuT4EqerPzbkSzDBXqik2f2Fx7wyX2VvT7MuLCLeUxsQOo-okkHtsYTJzaIOyDzpW3SdycEWf50Tdzlo7SKSi8F7hctMP5T9-ZhSNkOpw3kb506ztYnxG8xRFVMugz3eDYiU-k0p78qTp7lZxmFrUCwqi_pW6gj4cBhu7dupnYs2GoFDptgFhrK5FZjGFggEu9In1M97ENSOqZ9ARB4Cy8Y"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-80"></div>
+<div class="absolute top-3 right-3 bg-[#b8860b]/10 border border-[#b8860b] px-2 py-0.5">
+<span class="text-[9px] font-bold text-[#b8860b] uppercase tracking-widest">RARE</span>
+</div>
+</div>
+<div class="p-5 border-t border-[#b8860b]/10 relative z-10">
+<h3 class="font-serif text-[#b8860b] text-lg font-bold mb-1">Gate of Bitter Hopes</h3>
+<p class="text-[10px] text-[#4a4a4a] uppercase tracking-widest mb-4">Key Object | Book II</p>
+<div class="flex justify-between items-center mb-4">
+<div>
+<p class="text-[9px] text-on-primary-container uppercase tracking-tighter">Seller</p>
+<p class="text-xs font-serif text-secondary">Broken_Emerald</p>
+</div>
+<div class="text-right">
+<p class="text-[9px] text-on-primary-container uppercase tracking-tighter">Current Price</p>
+<div class="flex items-center gap-1 text-[#b8860b]">
+<span class="material-symbols-outlined text-xs">monetization_on</span>
+<span class="font-bold">920</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-[#b8860b] text-[#0a0a0a] font-bold font-serif uppercase tracking-widest text-[10px] hover:bg-[#d4a017] transition-all">Buy Now</button>
+</div>
+</div>
+</div>
+<!-- Pagination -->
+<div class="flex justify-center items-center gap-4 mt-16 font-serif">
+<button class="w-10 h-10 flex items-center justify-center border border-[#b8860b]/20 text-[#4a4a4a] hover:text-[#b8860b] hover:border-[#b8860b] transition-all">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center border border-[#b8860b] text-[#b8860b] bg-[#b8860b]/10">1</button>
+<button class="w-10 h-10 flex items-center justify-center border border-[#b8860b]/20 text-[#4a4a4a] hover:text-[#b8860b] hover:border-[#b8860b] transition-all">2</button>
+<button class="w-10 h-10 flex items-center justify-center border border-[#b8860b]/20 text-[#4a4a4a] hover:text-[#b8860b] hover:border-[#b8860b] transition-all">3</button>
+<button class="w-10 h-10 flex items-center justify-center border border-[#b8860b]/20 text-[#4a4a4a] hover:text-[#b8860b] hover:border-[#b8860b] transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 bg-[#0a0a0a]/95 backdrop-blur-md border-t border-[#8b0000]/30 shadow-[0_-10px_40px_rgba(0,0,0,0.9)] z-50 rounded-t-xl pb-safe">
+<a class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90 font-serif text-[10px] uppercase" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span> Dashboard
+        </a>
+<a class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90 font-serif text-[10px] uppercase" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span> Campaign
+        </a>
+<a class="flex flex-col items-center justify-center text-gray-600 transition-transform duration-200 active:scale-90 font-serif text-[10px] uppercase" href="#">
+<span class="material-symbols-outlined" data-icon="style">style</span> Cards
+        </a>
+<a class="flex flex-col items-center justify-center text-[#b8860b] drop-shadow-[0_0_10px_rgba(184,134,11,0.8)] transition-transform duration-200 active:scale-90 font-serif text-[10px] uppercase" href="#">
+<span class="material-symbols-outlined" data-icon="storefront" data-weight="fill" style="font-variation-settings: 'FILL' 1;">storefront</span> Market
+        </a>
+</nav>
+</body></html>
