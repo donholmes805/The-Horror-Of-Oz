@@ -1,0 +1,9 @@
+kind: "AppHostingYaml"
+schemaVersion: "v1"
+
+runConfig:
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 10
