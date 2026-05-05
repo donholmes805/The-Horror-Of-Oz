@@ -190,7 +190,7 @@ export default function PathfinderJournal() {
                 <div className="flex-1 text-center md:text-left space-y-6">
                   <div className="space-y-2">
                     <div className="flex items-center justify-center md:justify-start gap-4">
-                      <h1 className="font-serif text-5xl md:text-7xl gold-gradient-text italic tracking-tighter leading-none">
+                      <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-7xl gold-gradient-text italic tracking-tighter leading-none">
                         Pathfinder’s Journal
                       </h1>
                     </div>
@@ -607,106 +607,105 @@ export default function PathfinderJournal() {
                       <Link href="/trading" className="glass-panel w-full py-4 text-[9px] flex items-center justify-center gap-2 text-zinc-500 hover:text-white transition-all border-white/10 uppercase tracking-widest font-black">
                         Sanctioned Trading <ArrowLeftRight className="w-3.5 h-3.5" />
                       </Link>
+                    {listings.length === 0 && trades.length === 0 && (
+                      <p className="text-xs text-zinc-700 italic font-serif text-center pt-4 border-t border-white/5">No exchanges recorded yet.</p>
+                    )}
+                 </div>
+               </section>
+
+               {/* 9. Account / Membership Panel */}
+               <section className="space-y-8">
+                 <div className="flex items-center justify-between px-4">
+                   <h2 className="text-[10px] uppercase tracking-[0.5em] font-black text-primary/60 flex items-center gap-3">
+                     <ShieldCheck className="w-4 h-4" /> Path Membership
+                   </h2>
+                 </div>
+
+                 <div className="glass-panel p-8 rounded-[2rem] border-white/5 bg-black/40 space-y-6 relative overflow-hidden">
+                   <div className="space-y-2">
+                     <p className="text-[7px] uppercase tracking-widest text-zinc-600 font-black">Authorized Email</p>
+                     <p className="text-sm text-zinc-300 font-serif italic truncate">{user?.email}</p>
                    </div>
 
-                   {listings.length === 0 && trades.length === 0 && (
-                     <p className="text-xs text-zinc-700 italic font-serif text-center pt-4 border-t border-white/5">No exchanges recorded yet.</p>
+                   <div className="p-5 rounded-2xl bg-zinc-950 border border-white/5 space-y-3">
+                     <div className="flex items-center justify-between">
+                        <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black">Status</span>
+                        {profile?.membershipStatus === "paid" ? (
+                          <span className="text-[8px] uppercase tracking-widest text-emerald-500 font-black flex items-center gap-2"><CheckCircle2 className="w-3 h-3" /> Active</span>
+                        ) : (
+                          <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-black">Standard</span>
+                        )}
+                     </div>
+                     <div className="flex items-center justify-between">
+                        <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black">Access Tier</span>
+                        <span className="text-xs text-white font-serif italic">{profile?.membershipStatus === "paid" ? "Paid Member" : "Free Explorer"}</span>
+                     </div>
+                   </div>
+
+                   {profile?.membershipStatus !== "paid" ? (
+                     <button className="premium-button w-full py-5 text-[10px] uppercase tracking-[0.2em]">
+                       Upgrade Membership
+                     </button>
+                   ) : (
+                     <button className="glass-panel w-full py-5 text-[10px] uppercase tracking-[0.2em] border-white/10 text-zinc-500 hover:text-white">
+                       Manage Subscription
+                     </button>
                    )}
-                </div>
-              {/* 9. Account / Membership Panel */}
-              <section className="space-y-8">
-                <div className="flex items-center justify-between px-4">
-                  <h2 className="text-[10px] uppercase tracking-[0.5em] font-black text-primary/60 flex items-center gap-3">
-                    <ShieldCheck className="w-4 h-4" /> Path Membership
-                  </h2>
-                </div>
+                 </div>
+               </section>
 
-                <div className="glass-panel p-8 rounded-[2rem] border-white/5 bg-black/40 space-y-6 relative overflow-hidden">
-                  <div className="space-y-2">
-                    <p className="text-[7px] uppercase tracking-widest text-zinc-600 font-black">Authorized Email</p>
-                    <p className="text-sm text-zinc-300 font-serif italic truncate">{user?.email}</p>
-                  </div>
-
-                  <div className="p-5 rounded-2xl bg-zinc-950 border border-white/5 space-y-3">
-                    <div className="flex items-center justify-between">
-                       <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black">Status</span>
-                       {profile?.membershipStatus === "paid" ? (
-                         <span className="text-[8px] uppercase tracking-widest text-emerald-500 font-black flex items-center gap-2"><CheckCircle2 className="w-3 h-3" /> Active</span>
-                       ) : (
-                         <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-black">Standard</span>
-                       )}
-                    </div>
-                    <div className="flex items-center justify-between">
-                       <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black">Access Tier</span>
-                       <span className="text-xs text-white font-serif italic">{profile?.membershipStatus === "paid" ? "Paid Member" : "Free Explorer"}</span>
-                    </div>
-                  </div>
-
-                  {profile?.membershipStatus !== "paid" ? (
-                    <button className="premium-button w-full py-5 text-[10px] uppercase tracking-[0.2em]">
-                      Upgrade Membership
-                    </button>
-                  ) : (
-                    <button className="glass-panel w-full py-5 text-[10px] uppercase tracking-[0.2em] border-white/10 text-zinc-500 hover:text-white">
-                      Manage Subscription
-                    </button>
-                  )}
-                </div>
-              </section>
-
-              {/* 10. Affiliate / Referral Network */}
-              <section className="space-y-8">
-                <div className="flex items-center justify-between px-4">
-                  <h2 className="text-[10px] uppercase tracking-[0.5em] font-black text-primary/60 flex items-center gap-3">
-                    <Users className="w-4 h-4" /> Pathwalker Network
-                  </h2>
-                  <div className="group/help relative">
-                    <Info className="w-3.5 h-3.5 text-zinc-700 cursor-help" />
-                    <div className="absolute bottom-full right-0 mb-2 w-64 opacity-0 group-hover/help:opacity-100 pointer-events-none transition-all z-50">
-                      <div className="glass-panel p-3 rounded-xl border-white/10 bg-black/90 backdrop-blur-3xl text-[9px] text-zinc-400 font-serif italic leading-relaxed shadow-2xl">
-                        Become an official Pathwalker and earn Yellow Shards and commissions for bringing others to the Yellow Path.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="glass-panel p-8 rounded-[2rem] border-white/5 bg-black/40 space-y-8 relative overflow-hidden">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                          <Zap className="w-6 h-6 text-primary" />
+               {/* 10. Affiliate / Referral Network */}
+               <section className="space-y-8">
+                 <div className="flex items-center justify-between px-4">
+                   <h2 className="text-[10px] uppercase tracking-[0.5em] font-black text-primary/60 flex items-center gap-3">
+                     <Users className="w-4 h-4" /> Pathwalker Network
+                   </h2>
+                   <div className="group/help relative">
+                     <Info className="w-3.5 h-3.5 text-zinc-700 cursor-help" />
+                     <div className="absolute bottom-full right-0 mb-2 w-64 opacity-0 group-hover/help:opacity-100 pointer-events-none transition-all z-50">
+                       <div className="glass-panel p-3 rounded-xl border-white/10 bg-black/90 backdrop-blur-3xl text-[9px] text-zinc-400 font-serif italic leading-relaxed shadow-2xl">
+                         Become an official Pathwalker and earn Yellow Shards and commissions for bringing others to the Yellow Path.
                        </div>
-                       <div>
-                          <h4 className="text-white font-serif italic">Your Referral Code</h4>
-                          <p className="text-[10px] uppercase font-black tracking-widest text-zinc-600">Share with other spirits</p>
-                       </div>
-                    </div>
-                    
-                    <div className="p-4 rounded-2xl bg-zinc-950 border border-white/5 flex items-center justify-between group">
-                       <span className="text-xl text-primary font-serif italic tracking-tighter uppercase">{profile?.referralCode || "OZ-JOURNAL-UNSET"}</span>
-                       <button className="p-2 rounded-lg bg-white/5 hover:bg-primary hover:text-black transition-all">
-                          <ArrowRight className="w-4 h-4" />
-                       </button>
-                    </div>
-                  </div>
+                     </div>
+                   </div>
+                 </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-zinc-950 border border-white/5 space-y-1">
-                       <p className="text-[7px] uppercase tracking-widest text-zinc-600 font-black">Path Signups</p>
-                       <p className="text-xl text-white font-serif italic">{profile?.referralCount || 0}</p>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-zinc-950 border border-white/5 space-y-1">
-                       <p className="text-[7px] uppercase tracking-widest text-zinc-600 font-black">Shard Rewards</p>
-                       <p className="text-xl text-primary font-serif italic">{profile?.referralEarnings || 0}</p>
-                    </div>
-                  </div>
+                 <div className="glass-panel p-8 rounded-[2rem] border-white/5 bg-black/40 space-y-8 relative overflow-hidden">
+                   <div className="space-y-4">
+                     <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                           <Zap className="w-6 h-6 text-primary" />
+                        </div>
+                        <div>
+                           <h4 className="text-white font-serif italic">Your Referral Code</h4>
+                           <p className="text-[10px] uppercase font-black tracking-widest text-zinc-600">Share with other spirits</p>
+                        </div>
+                     </div>
+                     
+                     <div className="p-4 rounded-2xl bg-zinc-950 border border-white/5 flex items-center justify-between group">
+                        <span className="text-xl text-primary font-serif italic tracking-tighter uppercase">{profile?.referralCode || "OZ-JOURNAL-UNSET"}</span>
+                        <button className="p-2 rounded-lg bg-white/5 hover:bg-primary hover:text-black transition-all">
+                           <ArrowRight className="w-4 h-4" />
+                        </button>
+                     </div>
+                   </div>
 
-                  <button className="premium-button w-full py-4 text-[9px] uppercase tracking-widest flex items-center justify-center gap-3">
-                    <BadgeCheck className="w-4 h-4" /> Open Affiliate Portal
-                  </button>
-                </div>
-              </section>
-              </section>
+                   <div className="grid grid-cols-2 gap-4">
+                     <div className="p-4 rounded-2xl bg-zinc-950 border border-white/5 space-y-1">
+                        <p className="text-[7px] uppercase tracking-widest text-zinc-600 font-black">Path Signups</p>
+                        <p className="text-xl text-white font-serif italic">{profile?.referralCount || 0}</p>
+                     </div>
+                     <div className="p-4 rounded-2xl bg-zinc-950 border border-white/5 space-y-1">
+                        <p className="text-[7px] uppercase tracking-widest text-zinc-600 font-black">Shard Rewards</p>
+                        <p className="text-xl text-primary font-serif italic">{profile?.referralEarnings || 0}</p>
+                     </div>
+                   </div>
+
+                   <button className="premium-button w-full py-4 text-[9px] uppercase tracking-widest flex items-center justify-center gap-3">
+                     <BadgeCheck className="w-4 h-4" /> Open Affiliate Portal
+                   </button>
+                 </div>
+               </section>
 
 
 

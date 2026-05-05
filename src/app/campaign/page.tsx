@@ -647,12 +647,12 @@ export default function CampaignBoard() {
         {/* Map Scroll Container */}
         <div 
           id="map-container"
-          className="relative w-full h-full overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing p-40 scrollbar-hide select-none z-10"
+          className="relative w-full h-full overflow-auto cursor-grab active:cursor-grabbing p-20 md:p-40 scrollbar-hide select-none z-10"
         >
           <motion.div 
-            drag="x"
-            dragConstraints={{ left: -2000, right: 500 }}
-            className="relative w-[3500px] h-full"
+            drag
+            dragConstraints={{ left: -2500, right: 500, top: -500, bottom: 500 }}
+            className="relative w-[3500px] h-[1500px]"
           >
             {/* SVG Path Layer */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
@@ -851,17 +851,16 @@ export default function CampaignBoard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-6 bg-black/90 backdrop-blur-xl"
-              onClick={() => setSelectedNode(null)}
-            >
-              <motion.div 
-                initial={{ y: "100%", scale: 0.95 }}
-                animate={{ y: 0, scale: 1 }}
-                exit={{ y: "100%", scale: 0.95 }}
-                transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="w-full max-w-2xl glass-panel p-8 md:p-12 relative rounded-t-[2.5rem] md:rounded-[3rem] border-primary/20 shadow-[0_-20px_100px_rgba(0,0,0,1)] bg-[#0a0a0a]/95 pointer-events-auto overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-              >
+            <div className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-xl" onClick={() => setSelectedNode(null)}>
+              <div className="min-h-full flex items-end md:items-center justify-center p-0 md:p-6">
+                <motion.div 
+                  initial={{ y: "100%", scale: 0.95 }}
+                  animate={{ y: 0, scale: 1 }}
+                  exit={{ y: "100%", scale: 0.95 }}
+                  transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                  className="w-full max-w-2xl glass-panel p-8 md:p-12 relative rounded-t-[2.5rem] md:rounded-[3rem] border-primary/20 shadow-[0_-20px_100px_rgba(0,0,0,1)] bg-[#0a0a0a]/95 pointer-events-auto overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
                 {/* Background Decor */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50" />
                 <Compass className="absolute -top-12 -right-12 w-64 h-64 text-primary/5 rotate-12 pointer-events-none" />
@@ -1054,18 +1053,20 @@ export default function CampaignBoard() {
                   )}
                 </div>
               </motion.div>
-            </motion.div>
+            </div>
+          </div>
           )}
 
 
           {/* Story Event - Narrative Immersion */}
           {activeEvent && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl">
-              <motion.div 
-                initial={{ y: 50, opacity: 0 }} 
-                animate={{ y: 0, opacity: 1 }} 
-                className="w-full max-w-4xl glass-panel p-10 md:p-20 text-center space-y-12 border-primary/30 rounded-[3rem] md:rounded-[4rem] bg-zinc-950/90 shadow-[0_0_150px_rgba(0,0,0,1)] relative overflow-hidden"
-              >
+            <div className="fixed inset-0 z-[60] bg-black/98 backdrop-blur-3xl overflow-y-auto">
+              <div className="min-h-full flex items-center justify-center p-4 md:p-12">
+                <motion.div 
+                  initial={{ y: 50, opacity: 0 }} 
+                  animate={{ y: 0, opacity: 1 }} 
+                  className="w-full max-w-4xl glass-panel p-8 md:p-20 text-center space-y-12 border-primary/30 rounded-[3rem] md:rounded-[4rem] bg-zinc-950/90 shadow-[0_0_150px_rgba(0,0,0,1)] relative overflow-hidden"
+                >
                 {/* Decorative Elements */}
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                 <Book className="absolute -top-10 -right-10 w-48 h-48 text-primary/5 -rotate-12 pointer-events-none" />
@@ -1157,12 +1158,13 @@ export default function CampaignBoard() {
 
           {/* Encounter - Battle Tension */}
           {activeEncounter && (
-            <div className="fixed inset-0 z-[70] flex items-center justify-center p-0 md:p-6 bg-black/98 backdrop-blur-3xl overflow-hidden">
-              <motion.div 
-                initial={{ scale: 1.1, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }} 
-                className="w-full h-full md:h-auto md:max-w-5xl glass-panel p-10 md:p-20 flex flex-col items-center justify-center space-y-12 border-red-900/20 bg-[#050505]/95 shadow-[0_0_200px_rgba(139,17,17,0.2)] relative"
-              >
+            <div className="fixed inset-0 z-[70] bg-black/98 backdrop-blur-3xl overflow-y-auto">
+              <div className="min-h-full flex items-center justify-center p-0 md:p-6">
+                <motion.div 
+                  initial={{ scale: 1.1, opacity: 0 }} 
+                  animate={{ scale: 1, opacity: 1 }} 
+                  className="w-full h-full md:h-auto md:max-w-5xl glass-panel p-8 md:p-20 flex flex-col items-center justify-center space-y-12 border-red-900/20 bg-[#050505]/95 shadow-[0_0_200px_rgba(139,17,17,0.2)] relative"
+                >
                 {/* Battle Background Decor */}
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
                   <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-red-600/20 to-transparent" />
@@ -1321,17 +1323,19 @@ export default function CampaignBoard() {
                 </p>
               </motion.div>
             </div>
+          </div>
           )}
 
 
           {/* Reward Modal - Cinematic Loot Reveal */}
           {activeReward && (
-            <div className="fixed inset-0 z-[80] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl">
-              <motion.div 
-                initial={{ y: 100, opacity: 0, scale: 0.8 }} 
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                className="w-full max-w-xl glass-panel p-10 md:p-20 text-center space-y-10 border-primary/30 rounded-[3rem] md:rounded-[4rem] bg-zinc-950/90 shadow-[0_0_150px_rgba(200,155,44,0.1)] relative overflow-hidden"
-              >
+            <div className="fixed inset-0 z-[80] bg-black/98 backdrop-blur-3xl overflow-y-auto">
+              <div className="min-h-full flex items-center justify-center p-6">
+                <motion.div 
+                  initial={{ y: 100, opacity: 0, scale: 0.8 }} 
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  className="w-full max-w-xl glass-panel p-8 md:p-20 text-center space-y-10 border-primary/30 rounded-[3rem] md:rounded-[4rem] bg-zinc-950/90 shadow-[0_0_150px_rgba(200,155,44,0.1)] relative overflow-hidden"
+                >
                 {/* Shine Animation */}
                 <motion.div 
                   animate={{ x: ["-100%", "100%"] }}
@@ -1389,16 +1393,18 @@ export default function CampaignBoard() {
                 </motion.button>
               </motion.div>
             </div>
+          </div>
           )}
 
           {/* Quest Completion Modal - Dramatic Achievement */}
           {questComplete && (
-            <div className="fixed inset-0 z-[90] flex items-center justify-center p-6 bg-black/98 backdrop-blur-3xl">
-              <motion.div 
-                initial={{ scale: 0.5, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }}
-                className="w-full max-w-2xl glass-panel p-12 md:p-24 text-center space-y-12 border-primary/40 bg-zinc-950/95 shadow-[0_0_200px_rgba(200,155,44,0.3)] relative overflow-hidden"
-              >
+            <div className="fixed inset-0 z-[90] bg-black/98 backdrop-blur-3xl overflow-y-auto">
+              <div className="min-h-full flex items-center justify-center p-6">
+                <motion.div 
+                  initial={{ scale: 0.5, opacity: 0 }} 
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-full max-w-2xl glass-panel p-10 md:p-24 text-center space-y-12 border-primary/40 bg-zinc-950/95 shadow-[0_0_200px_rgba(200,155,44,0.3)] relative overflow-hidden"
+                >
                 {/* Victory Burst Decor */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[60rem] bg-radial-vignette opacity-20 rotate-45 pointer-events-none" />
                 
