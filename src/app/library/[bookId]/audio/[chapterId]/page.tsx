@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 
 export default function AudiobookPage() {
   const { bookId, chapterId } = useParams();
-  const { user, profile } = useAuth();
+  const { user, profile, hasPaidAccess } = useAuth();
   const router = useRouter();
   
   const [isPlaying, setIsPlaying] = useState(false);
@@ -42,7 +42,7 @@ export default function AudiobookPage() {
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const book = BOOKS.find(b => b.bookId === bookId);
-  const isPaid = profile?.membershipStatus === "paid" || profile?.membershipStatus === "admin" || profile?.membershipStatus === "owner";
+  const isPaid = hasPaidAccess;
 
   useEffect(() => {
     async function fetchChapter() {

@@ -18,7 +18,8 @@ import {
   Users,
   History,
   Share2,
-  Lock
+  Lock,
+  LogOut
 } from "lucide-react";
 
 const navItems = [
@@ -35,7 +36,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { profile, isOwner } = useAuth();
+  const { profile, isOwner, logout, user } = useAuth();
 
   const isAdmin = profile?.role === "admin" || isOwner;
 
@@ -125,6 +126,15 @@ export function Sidebar() {
           <HelpCircle className="w-4 h-4" />
           Support
         </Link>
+        {user && (
+          <button
+            onClick={() => logout()}
+            className="w-full flex items-center gap-3 px-4 py-3 text-red-500/60 hover:bg-red-500/5 hover:text-red-500 font-serif uppercase tracking-widest text-xs transition-all duration-300 border-t border-white/5 mt-2 pt-4"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        )}
       </div>
     </aside>
   );

@@ -24,10 +24,10 @@ const CHAPTERS = [
 export default function BookDetailPage() {
   const { bookId } = useParams();
   const router = useRouter();
-  const { user, profile } = useAuth();
+  const { user, profile, hasPaidAccess } = useAuth();
   const [progress, setProgress] = useState<any>(null);
   const book = BOOKS.find(b => b.bookId === bookId);
-  const isPaid = profile?.membershipStatus === "paid" || profile?.membershipStatus === "admin" || profile?.membershipStatus === "owner";
+  const isPaid = hasPaidAccess;
 
   useEffect(() => {
     if (!user) return;

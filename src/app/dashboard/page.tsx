@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -35,7 +35,8 @@ import {
   History,
   ChevronDown,
   HelpCircle,
-  CheckCircle2
+  CheckCircle2,
+  Wand2
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -164,6 +165,25 @@ export default function Dashboard() {
     { label: "Steel", value: profile?.steel || 2, icon: <Shield className="w-4 h-4" />, color: "text-zinc-400", bg: "bg-zinc-400/10" },
   ];
 
+  // Campaign CTA logic
+  const getCampaignLabel = () => {
+    if (!progress) return "Start Adventure";
+    if (progress.completed) return "Replay Adventure";
+    if (progress.hasStartedCampaign || (progress.visitedNodes && progress.visitedNodes.length > 1)) return "Resume Adventure";
+    return "Start Adventure";
+  };
+
+  // Migration for existing users
+  useEffect(() => {
+    if (user && progress && progress.hasStartedCampaign === undefined) {
+      const hasStarted = progress.visitedNodes && progress.visitedNodes.length > 1;
+      updateDoc(doc(db, "playerProgress", user.uid), {
+        hasStartedCampaign: hasStarted,
+        lastPlayedAt: progress.updatedAt || serverTimestamp()
+      }).catch(console.error);
+    }
+  }, [user, progress]);
+
   return (
     <MainLayout>
       {/* Cinematic Background Elements */}
@@ -213,26 +233,20 @@ export default function Dashboard() {
                 </div>
               </div>
               
-              <Link 
-                href="/membership"
-                className={cn(
-                  "glass-panel px-8 py-4 rounded-2xl flex items-center gap-4 border-white/5 transition-all hover:border-amber-500/20 group",
-                  profile?.membershipStatus === "paid" ? "bg-amber-500/5 border-amber-500/20" : "bg-zinc-950/40"
-                )}
-              >
-                <div className={cn(
-                  "p-3 rounded-xl transition-colors",
-                  profile?.membershipStatus === "paid" ? "bg-amber-500/20 text-amber-500" : "bg-zinc-800/50 text-zinc-600"
-                )}>
-                  <Trophy className="w-5 h-5" />
+
+              {profile?.role === 'owner' && (
+                <div className="glass-panel px-8 py-4 rounded-2xl flex items-center gap-4 border-primary/20 bg-primary/5 shadow-[0_0_30px_rgba(184,134,11,0.1)]">
+                  <div className="p-3 rounded-xl bg-primary/20 text-primary">
+                    <Wand2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[8px] uppercase tracking-[0.2em] text-primary/60 font-black">Divine Privilege</p>
+                    <p className="font-serif italic text-2xl text-primary leading-none mt-1 uppercase tracking-tight">
+                      Grand Owner
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Current Rank</p>
-                  <p className="font-serif italic text-2xl text-white leading-none mt-1 uppercase tracking-tight">
-                    {profile?.membershipStatus || "Free"}
-                  </p>
-                </div>
-              </Link>
+              )}
             </div>
           </div>
         </div>
@@ -330,7 +344,7 @@ export default function Dashboard() {
                 </p>
                 <div className="flex items-center gap-8">
                   <Link href="/campaign" className="premium-button px-10 py-4 flex items-center gap-3 group/btn">
-                    <span>Resume Adventure</span>
+                    <span>{getCampaignLabel()}</span>
                     <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                   </Link>
                   <div className="space-y-1">

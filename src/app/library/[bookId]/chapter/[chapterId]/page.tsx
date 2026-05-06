@@ -20,7 +20,7 @@ const CHAPTER_DATA: Record<string, string> = {
 export default function ChapterReader() {
   const { bookId, chapterId } = useParams();
   const router = useRouter();
-  const { user, profile } = useAuth();
+  const { user, profile, hasPaidAccess } = useAuth();
   
   const [fontSize, setFontSize] = useState(20);
   const [fontFamily, setFontFamily] = useState("serif");
@@ -31,7 +31,7 @@ export default function ChapterReader() {
   const [loading, setLoading] = useState(true);
 
   const book = BOOKS.find(b => b.bookId === bookId);
-  const isPaid = profile?.membershipStatus === "paid" || profile?.membershipStatus === "admin" || profile?.membershipStatus === "owner";
+  const isPaid = hasPaidAccess;
   
   const isFreeChapter = chapterId === "ch-0";
 

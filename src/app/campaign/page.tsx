@@ -32,7 +32,12 @@ import {
   GripHorizontal,
   Star,
   X,
-  HelpCircle
+  HelpCircle,
+  Volume2,
+  VolumeX,
+  Wand2,
+  RefreshCcw,
+  Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { doc, updateDoc, getDoc, arrayUnion, onSnapshot, serverTimestamp, setDoc, increment } from "firebase/firestore";
@@ -40,9 +45,11 @@ import { db } from "@/lib/firebase";
 import { BetaNotice } from "@/components/shared/BetaNotice";
 import Link from "next/link";
 import { ENEMIES, BOSSES, Enemy } from "@/constants/encounters";
+import { playSfx, getSoundEnabled, setSoundEnabled } from "@/lib/sfx";
+import { StatPop, BossWarning, UnlockAnimation, QuestCompleteEffect, RewardReveal } from "@/components/shared/GameEffects";
 
 export default function CampaignBoard() {
-  const { user, profile } = useAuth();
+  const { user, profile, isInternal } = useAuth();
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [progress, setProgress] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
@@ -55,7 +62,34 @@ export default function CampaignBoard() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [toasts, setToasts] = useState<{id: string, message: string, type: 'success' | 'error' | 'info'}[]>([]);
   const [isLegendOpen, setIsLegendOpen] = useState(false);
+  const [soundEnabled, setSoundEnabledState] = useState(true);
+  const [showOwnerTools, setShowOwnerTools] = useState(false);
+  const [storyResult, setStoryResult] = useState<any>(null);
+  const [isAttacking, setIsAttacking] = useState(false);
+  const [activeEffects, setActiveEffects] = useState<{id: string, value: string, type: any, x: number, y: number}[]>([]);
+  const [showUnlockAnim, setShowUnlockAnim] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
+
+  // Sound System Sync
+  useEffect(() => {
+    setSoundEnabledState(getSoundEnabled());
+  }, []);
+
+  const toggleSound = () => {
+    const newVal = !soundEnabled;
+    setSoundEnabledState(newVal);
+    setSoundEnabled(newVal);
+  };
+
+  const addEffect = (value: string, type: any, x?: number, y?: number) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const effectX = x || mousePos.x || window.innerWidth / 2;
+    const effectY = y || mousePos.y || window.innerHeight / 2;
+    setActiveEffects(prev => [...prev, { id, value, type, x: effectX, y: effectY }]);
+    setTimeout(() => {
+      setActiveEffects(prev => prev.filter(e => e.id !== id));
+    }, 1000);
+  };
 
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -67,6 +101,7 @@ export default function CampaignBoard() {
 
   const handleNodeClick = (node: Node) => {
     if (progress?.revealedNodes.includes(node.id)) {
+      playSfx('click');
       setSelectedNode(node);
     }
   };
@@ -103,8 +138,19 @@ export default function CampaignBoard() {
     }, 10000);
 
     const unsubProgress = onSnapshot(doc(db, "playerProgress", user.uid), 
-      (doc) => {
-        setProgress(doc.data());
+      (snap) => {
+        const data = snap.data();
+        setProgress(data);
+        
+        // Campaign Start Detection
+        if (data && !data.hasStartedCampaign) {
+          updateDoc(doc(db, "playerProgress", user.uid), {
+            hasStartedCampaign: true,
+            startedAt: data.startedAt || serverTimestamp(),
+            lastPlayedAt: serverTimestamp()
+          }).catch(console.error);
+        }
+
         setLoading(false);
         clearTimeout(timeout);
       },
@@ -147,39 +193,100 @@ export default function CampaignBoard() {
   };
 
   const checkRequirements = (node: Node) => {
+    if (isInternal) {
+      console.log(`[Owner Bypass] Accessing node: ${node.id}`);
+      return true;
+    }
     if (!node.requirements) return true;
     const { key, stat, event, OR, AND } = node.requirements;
     
-    if (key && !progress.inventoryKeys.includes(key)) return false;
-    if (stat && stats[stat.name as keyof typeof stats] < stat.value) return false;
-    if (event && !progress.completedNodes.includes(event)) return false;
+    let met = true;
+    if (key && !progress.inventoryKeys?.includes(key)) met = false;
+    if (stat && stats[stat.name as keyof typeof stats] < stat.value) met = false;
+    if (event && !progress.completedNodes?.includes(event)) met = false;
     
-    if (OR && Array.isArray(OR)) {
+    if (met && OR && Array.isArray(OR)) {
       const anyMet = OR.some(req => {
-        if (req.key && progress.inventoryKeys.includes(req.key)) return true;
+        if (req.key && progress.inventoryKeys?.includes(req.key)) return true;
         if (req.stat && stats[req.stat.name as keyof typeof stats] >= req.stat.value) return true;
-        if (req.event && progress.completedNodes.includes(req.event)) return true;
+        if (req.event && progress.completedNodes?.includes(req.event)) return true;
         return false;
       });
-      if (!anyMet) return false;
+      if (!anyMet) met = false;
     }
 
-    if (AND) {
+    if (met && AND) {
       if (Array.isArray(AND)) {
         const allMet = AND.every(req => {
-          if (req.key && !progress.inventoryKeys.includes(req.key)) return false;
+          if (req.key && !progress.inventoryKeys?.includes(req.key)) return false;
           if (req.stat && stats[req.stat.name as keyof typeof stats] < req.stat.value) return false;
-          if (req.event && !progress.completedNodes.includes(req.event)) return false;
+          if (req.event && !progress.completedNodes?.includes(req.event)) return false;
           return true;
         });
-        if (!allMet) return false;
+        if (!allMet) met = false;
       } else {
-        if (AND.key && !progress.inventoryKeys.includes(AND.key)) return false;
-        if (AND.items && progress.mapFragments < AND.items) return false;
+        if (AND.key && !progress.inventoryKeys?.includes(AND.key)) met = false;
+        if (AND.items && progress.mapFragments < AND.items) met = false;
       }
     }
 
-    return true;
+    if (!met) {
+      playSfx('locked-door');
+    }
+
+    return met;
+  };
+
+  // Owner Testing Tools
+  const repairProgress = async () => {
+    if (!user || !profile || profile.role !== 'owner') return;
+    setIsProcessing(true);
+    try {
+      await updateDoc(doc(db, "playerProgress", user.uid), {
+        actionPoints: 99,
+        unlockedNodes: arrayUnion(...BOOK_I_NODES.map(n => n.id)),
+        revealedNodes: arrayUnion(...BOOK_I_NODES.map(n => n.id)),
+        updatedAt: serverTimestamp()
+      });
+      addToast("Progress Repaired", "success");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const giveOwnerStats = async () => {
+    if (!user || !profile || profile.role !== 'owner') return;
+    setIsProcessing(true);
+    try {
+      await updateDoc(doc(db, "playerStats", user.uid), {
+        health: 999,
+        courage: 99,
+        hope: 99,
+        steel: 99,
+        memory: 99,
+        updatedAt: serverTimestamp()
+      });
+      addToast("Stats Maxed", "success");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const giveItem = async (type: string, id: string) => {
+    if (!user || !profile || profile.role !== 'owner') return;
+    try {
+      const updates: any = {};
+      if (type === 'key') updates.inventoryKeys = arrayUnion(id);
+      if (type === 'fragment') updates.mapFragments = increment(1);
+      await updateDoc(doc(db, "playerProgress", user.uid), updates);
+      addToast(`Granted: ${id}`, "success");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleMove = async (node: Node) => {
@@ -188,6 +295,10 @@ export default function CampaignBoard() {
     if (!checkRequirements(node)) return;
 
     setIsProcessing(true);
+    playSfx('ui-click');
+    playSfx('map-move');
+    addEffect('-1 AP', 'ap');
+
     try {
       const updates: any = {
         currentNode: node.id,
@@ -204,10 +315,13 @@ export default function CampaignBoard() {
       addToast(`Moved to ${node.name}`, 'success');
 
       if (node.type === "FinalBoss") {
+        playSfx('boss-warning');
         triggerBoss(node);
       } else if (node.eventId && !progress.completedNodes.includes(node.eventId)) {
+        playSfx('story-open');
         triggerStoryEvent(node.eventId);
       } else if (node.type === "Encounter" || node.type === "DangerPath" || node.type === "EncounterSearch" || node.type === "MiniBoss") {
+        playSfx('combat-start');
         triggerEncounter(node);
       }
 
@@ -222,6 +336,7 @@ export default function CampaignBoard() {
   const handleSearch = async (node: Node) => {
     if (!user || !progress || progress.actionPoints < 1 || isProcessing) return;
     setIsProcessing(true);
+    playSfx('ui-click');
     try {
       const pool = getSearchPool(node.id);
       const result = pool[Math.floor(Math.random() * pool.length)];
@@ -233,10 +348,15 @@ export default function CampaignBoard() {
 
       if (result.type === "key") {
         updates.inventoryKeys = arrayUnion(result.id);
+        playSfx('success-chime');
       } else if (result.type === "fragment") {
-        updates.mapFragments = progress.mapFragments + 1;
+        updates.mapFragments = increment(1);
+        playSfx('success-chime');
       } else if (result.type === "card") {
         await grantCard(result.id, "search");
+        playSfx('loot');
+      } else {
+        playSfx('search');
       }
 
       await updateDoc(doc(db, "playerProgress", user.uid), updates);
@@ -261,7 +381,7 @@ export default function CampaignBoard() {
             id: "c1", 
             label: "Stand Against the Mob", 
             req: "Courage 3", 
-            canDo: stats.courage >= 3,
+            canDo: stats.courage >= 3 || isInternal,
             result: "Unlock Sir Hollin Thatch ally, +1 Courage",
             success: "You drive them back. Thatch is free.",
             failure: "The mob is too strong. You are forced to retreat."
@@ -270,7 +390,7 @@ export default function CampaignBoard() {
             id: "c2", 
             label: "Sneak Around the Gallows", 
             req: "Memory 2", 
-            canDo: stats.memory >= 2,
+            canDo: stats.memory >= 2 || isInternal,
             result: "Unlock Sir Hollin Thatch ally",
             success: "Shadows are your friends. Thatch is free.",
             failure: "A rusted gear squeaks. You are spotted."
@@ -279,21 +399,32 @@ export default function CampaignBoard() {
             id: "c3", 
             label: "Call for Mercy", 
             req: "Hope 3", 
-            canDo: stats.hope >= 3,
+            canDo: stats.hope >= 3 || isInternal,
             result: "Unlock Sir Hollin Thatch ally, +1 Hope",
             success: "Your words resonate. Even tin hearts soften.",
             failure: "Mercy is a foreign concept to these constructs."
+          },
+          {
+            id: "fallback",
+            label: "Desperate Attempt",
+            req: "Health -1",
+            canDo: true,
+            isFallback: true,
+            result: "Unlock Thatch, -1 Health, +1 Fear",
+            success: "You act without the strength required. The path opens, but Oz takes payment.",
+            failure: "Oz takes more than you can give."
           }
         ]
       });
+      playSfx('boss-warning');
     } else if (eventId === "book1_story_living_arches") {
       setActiveEvent({
         id: eventId,
         title: "Beneath the Living Arches",
         description: "Bio-mechanical flora weaves a canopy of brass leaves and pulsing vines. The air smells of ozone and nectar.",
         choices: [
-          { id: "c1", label: "Commune with the Core", req: "Memory 4", canDo: stats.memory >= 4, result: "+1 Memory, Reveal Hidden Search", success: "You understand the code. The forest speaks.", failure: "The static is deafening." },
-          { id: "c2", label: "Harvest Spare Parts", req: "Steel 3", canDo: stats.steel >= 3, result: "+20 Yellow Shards", success: "You take what you need from the metal stalks.", failure: "The vines lash out." }
+          { id: "c1", label: "Commune with the Core", req: "Memory 4", canDo: stats.memory >= 4 || isInternal, result: "+1 Memory, Reveal Hidden Search", success: "You understand the code. The forest speaks.", failure: "The static is deafening." },
+          { id: "c2", label: "Harvest Spare Parts", req: "Steel 3", canDo: stats.steel >= 3 || isInternal, result: "+20 Yellow Shards", success: "You take what you need from the metal stalks.", failure: "The vines lash out." }
         ]
       });
     } else if (eventId === "book1_story_memory_of_kansas") {
@@ -302,8 +433,8 @@ export default function CampaignBoard() {
         title: "Memory of Kansas",
         description: "The dust forms a familiar shape—a house, a dog, a voice calling your name from the cellar.",
         choices: [
-          { id: "c1", label: "Embrace the Vision", req: "Hope 5", canDo: stats.hope >= 5, result: "+2 Hope, -1 Resilience", success: "The warmth is real, for a moment.", failure: "It's just ash in the wind." },
-          { id: "c2", label: "Deny the Mirage", req: "Steel 4", canDo: stats.steel >= 4, result: "+2 Steel", success: "Oz is the only reality now.", failure: "Doubt creeps in." }
+          { id: "c1", label: "Embrace the Vision", req: "Hope 5", canDo: stats.hope >= 5 || isInternal, result: "+2 Hope, -1 Resilience", success: "The warmth is real, for a moment.", failure: "It's just ash in the wind." },
+          { id: "c2", label: "Deny the Mirage", req: "Steel 4", canDo: stats.steel >= 4 || isInternal, result: "+2 Steel", success: "Oz is the only reality now.", failure: "Doubt creeps in." }
         ]
       });
     } else if (eventId === "book1_story_siege_begins") {
@@ -312,16 +443,22 @@ export default function CampaignBoard() {
         title: "The Siege Begins",
         description: "Rebel forces gather at the Iron Maw. The sky is black with the smoke of the forges.",
         choices: [
-          { id: "c1", label: "Lead the Vanguard", req: "Courage 6", canDo: stats.courage >= 6, result: "+2 Courage, +50 Shards", success: "You are the spearhead of the revolution.", failure: "The wall is too high." },
-          { id: "c2", label: "Support the Artillery", req: "Steel 5", canDo: stats.steel >= 5, result: "+1 Steel, +30 Shards", success: "Steel meets steel. The gates buckle.", failure: "A miscalculation cost you dearly." }
+          { id: "c1", label: "Lead the Vanguard", req: "Courage 6", canDo: stats.courage >= 6 || isInternal, result: "+2 Courage, +50 Shards", success: "You are the spearhead of the revolution.", failure: "The wall is too high." },
+          { id: "c2", label: "Support the Artillery", req: "Steel 5", canDo: stats.steel >= 5 || isInternal, result: "+1 Steel, +30 Shards", success: "Steel meets steel. The gates buckle.", failure: "A miscalculation cost you dearly." }
         ]
       });
     }
+    playSfx('ui-open');
   };
 
   const handleEventChoice = async (choice: any) => {
     if (!user || isProcessing) return;
+    if (isInternal && !choice.canDo) {
+       console.log(`[Owner Bypass] Selecting locked choice: ${choice.id}`);
+    }
     setIsProcessing(true);
+    playSfx('story-choice');
+
     try {
       const updates: any = {
         completedNodes: arrayUnion(activeEvent.id),
@@ -338,13 +475,35 @@ export default function CampaignBoard() {
 
       await updateDoc(doc(db, "playerProgress", user.uid), updates);
       
-      if (choice.id === "c1") await updateDoc(doc(db, "playerStats", user.uid), { courage: increment(1) });
-      if (choice.id === "c3") await updateDoc(doc(db, "playerStats", user.uid), { hope: increment(1) });
+      if (choice.id === "c1") {
+        await updateDoc(doc(db, "playerStats", user.uid), { courage: increment(1) });
+        addEffect('+1 Courage', 'stat');
+      }
+      if (choice.id === "c3") {
+        await updateDoc(doc(db, "playerStats", user.uid), { hope: increment(1) });
+        addEffect('+1 Hope', 'stat');
+      }
+      if (choice.id === "fallback") {
+        await updateDoc(doc(db, "playerStats", user.uid), { health: increment(-1) });
+        addEffect('-1 Resilience', 'damage');
+      }
 
+      playSfx('success-chime');
+      setStoryResult({
+        choice: choice,
+        title: "Event Resolved",
+        message: choice.success,
+        rewards: [
+          { name: "Sir Hollin Thatch", type: "ally" },
+          ...(choice.id === "c1" ? [{ name: "+1 Courage", type: "stat" }] : []),
+          ...(choice.id === "c3" ? [{ name: "+1 Hope", type: "stat" }] : []),
+          ...(choice.id === "fallback" ? [{ name: "-1 Resilience", type: "damage" }] : [])
+        ]
+      });
       setActiveEvent(null);
-      setActiveReward({ name: "Sir Hollin Thatch", type: "ally", description: "The Broken Knight has joined your cause." });
     } catch (err) {
       console.error(err);
+      playSfx('failure-hit');
     } finally {
       setIsProcessing(false);
     }
@@ -362,6 +521,7 @@ export default function CampaignBoard() {
     }
 
     setActiveEncounter(enemy);
+    playSfx('encounter');
   };
 
   const triggerBoss = (node: Node) => {
@@ -370,11 +530,16 @@ export default function CampaignBoard() {
 
   const handleEncounterResolve = async () => {
     if (!user || isProcessing) return;
-    setIsProcessing(true);
-    try {
-      const updates: any = {
-        updatedAt: serverTimestamp()
-      };
+    setIsAttacking(true);
+    playSfx('slash');
+    
+    setTimeout(async () => {
+      playSfx('enemy-hit');
+      setIsProcessing(true);
+      try {
+        const updates: any = {
+          updatedAt: serverTimestamp()
+        };
 
       if (progress.questProgress?.book1_quest_first_step?.status === "active") {
         const quest = progress.questProgress.book1_quest_first_step;
@@ -392,24 +557,28 @@ export default function CampaignBoard() {
         if (!currentSteps.includes("survive_encounter")) currentSteps.push("survive_encounter");
         
         if (currentSteps.includes("scour_area") && currentSteps.includes("rescue_thatch") && currentSteps.includes("survive_encounter")) {
+          playSfx('quest-complete');
           setQuestComplete({
             title: "First Step Complete",
             description: "You have survived the initial horrors of the Red Country and secured a key ally. The path ahead is long, but you are no longer alone.",
             rewardName: "Sir Hollin Thatch (Founder Edition)"
           });
-          // Note: Logic to update quest status to 'completed' and grant the card would go here, 
-          // but I'm keeping it to UI/Display triggers as requested.
         }
       }
 
       setActiveEncounter(null);
+      setIsAttacking(false);
+      playSfx('reward-reveal');
+      addEffect('+10 Shards', 'shard');
       setActiveReward({ name: "10 Yellow Shards", type: "shards", value: 10 });
       await updateDoc(doc(db, "users", user.uid), { yellowShards: increment(10) });
     } catch (err) {
       console.error(err);
+      setIsAttacking(false);
     } finally {
       setIsProcessing(false);
     }
+    }, 600);
   };
 
   const grantCard = async (cardId: string, source: string) => {
@@ -588,6 +757,27 @@ export default function CampaignBoard() {
                 )}
               </div>
 
+              {/* Sound Toggle */}
+              <button 
+                onClick={toggleSound}
+                className="glass-panel p-3 rounded-full border-primary/20 bg-black/80 text-primary hover:bg-primary/10 transition-all shadow-xl"
+              >
+                {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </button>
+
+              {/* Owner Tools Toggle */}
+              {profile?.role === 'owner' && (
+                <button 
+                  onClick={() => setShowOwnerTools(!showOwnerTools)}
+                  className={cn(
+                    "glass-panel p-3 rounded-full border-primary/20 transition-all shadow-xl",
+                    showOwnerTools ? "bg-primary text-black" : "bg-black/80 text-primary hover:bg-primary/10"
+                  )}
+                >
+                  <Wand2 className="w-5 h-5" />
+                </button>
+              )}
+
               {/* Map Legend Toggle */}
               <button 
                 onClick={() => setIsLegendOpen(true)}
@@ -642,6 +832,61 @@ export default function CampaignBoard() {
               </motion.div>
             ))}
           </div>
+
+          {/* Owner Tools Panel */}
+          <AnimatePresence>
+            {showOwnerTools && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="mt-6 glass-panel p-6 rounded-[2rem] border-primary/30 bg-black/90 backdrop-blur-3xl pointer-events-auto shadow-2xl max-w-sm"
+              >
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+                  <Wand2 className="w-5 h-5 text-primary" />
+                  <h3 className="text-[10px] uppercase font-black tracking-widest text-white">Owner Testing Tools</h3>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={repairProgress}
+                    className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+                  >
+                    <RefreshCcw className="w-3 h-3 text-primary" />
+                    <span className="text-[8px] uppercase font-black tracking-widest text-zinc-300 text-left">Repair Progress</span>
+                  </button>
+                  <button 
+                    onClick={giveOwnerStats}
+                    className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+                  >
+                    <Plus className="w-3 h-3 text-emerald-500" />
+                    <span className="text-[8px] uppercase font-black tracking-widest text-zinc-300 text-left">Max Stats</span>
+                  </button>
+                  <button 
+                    onClick={() => giveItem('key', 'rust-key')}
+                    className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+                  >
+                    <Key className="w-3 h-3 text-amber-500" />
+                    <span className="text-[8px] uppercase font-black tracking-widest text-zinc-300 text-left">Give Rust Key</span>
+                  </button>
+                  <button 
+                    onClick={() => giveItem('fragment', 'map')}
+                    className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+                  >
+                    <Navigation className="w-3 h-3 text-blue-400" />
+                    <span className="text-[8px] uppercase font-black tracking-widest text-zinc-300 text-left">Add Fragment</span>
+                  </button>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-white/10 text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/20 border border-primary/30 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    <span className="text-[8px] uppercase font-black tracking-widest text-primary">Owner Access Active</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Map Scroll Container */}
@@ -848,215 +1093,251 @@ export default function CampaignBoard() {
           {/* Node Interaction Panel - Responsive Modal/Bottom Sheet */}
           {selectedNode && !activeEvent && !activeEncounter && !activeReward && (
             <motion.div 
+              key="selected-node-overlay"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-            <div className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-xl" onClick={() => setSelectedNode(null)}>
-              <div className="min-h-full flex items-end md:items-center justify-center p-0 md:p-6">
-                <motion.div 
-                  initial={{ y: "100%", scale: 0.95 }}
-                  animate={{ y: 0, scale: 1 }}
-                  exit={{ y: "100%", scale: 0.95 }}
-                  transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                  className="w-full max-w-2xl glass-panel p-8 md:p-12 relative rounded-t-[2.5rem] md:rounded-[3rem] border-primary/20 shadow-[0_-20px_100px_rgba(0,0,0,1)] bg-[#0a0a0a]/95 pointer-events-auto overflow-hidden"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                {/* Background Decor */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50" />
-                <Compass className="absolute -top-12 -right-12 w-64 h-64 text-primary/5 rotate-12 pointer-events-none" />
-
-                {/* Header Section */}
-                <div className="flex justify-between items-start mb-8">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-[0.3em] border shadow-inner",
-                        selectedNode.type.includes("Boss") ? "bg-red-500/10 border-red-500/30 text-red-500" :
-                        selectedNode.type === "Search" ? "bg-amber-500/10 border-amber-500/30 text-amber-500" :
-                        "bg-primary/10 border-primary/30 text-primary"
-                      )}>
-                        {selectedNode.type}
-                      </div>
-                      <div className="h-px w-8 bg-white/10" />
-                      <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest">Section {selectedNode.section}</span>
-                    </div>
-                    <h2 className={cn(
-                      "text-4xl md:text-5xl text-white font-serif italic tracking-tight leading-tight",
-                      selectedNode.type.includes("Boss") && "gold-gradient-text"
-                    )}>
-                      {selectedNode.name}
-                    </h2>
-                  </div>
-                  <button 
-                    onClick={() => setSelectedNode(null)}
-                    className="p-3 rounded-full hover:bg-white/5 text-zinc-600 hover:text-white transition-all border border-white/5"
+            >
+              <div className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-xl" onClick={() => setSelectedNode(null)}>
+                <div className="min-h-full flex items-end md:items-center justify-center p-0 md:p-6">
+                  <motion.div 
+                    initial={{ y: "100%", scale: 0.95 }}
+                    animate={{ y: 0, scale: 1 }}
+                    exit={{ y: "100%", scale: 0.95 }}
+                    transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                    className="w-full max-w-2xl glass-panel p-8 md:p-12 relative rounded-t-[2.5rem] md:rounded-[3rem] border-primary/20 shadow-[0_-20px_100px_rgba(0,0,0,1)] bg-[#0a0a0a]/95 pointer-events-auto overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <ChevronRight className="rotate-90 w-5 h-5" />
-                  </button>
-                </div>
+                    {/* Background Decor */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50" />
+                    <Compass className="absolute -top-12 -right-12 w-64 h-64 text-primary/5 rotate-12 pointer-events-none" />
 
-                {/* Description Box */}
-                <div className="relative mb-10 p-8 rounded-3xl bg-black/40 border border-white/5 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-40" />
-                  <p className="relative z-10 text-zinc-400 italic leading-relaxed text-xl font-serif">
-                    "{selectedNode.description}"
-                  </p>
-                </div>
-
-                {/* Requirements / Status Checklist */}
-                <div className="mb-10 space-y-6">
-                  {/* Status Banner */}
-                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
-                    <div className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center border",
-                      progress?.currentNode === selectedNode.id ? "bg-primary/10 border-primary/30 text-primary" :
-                      progress?.completedNodes.includes(selectedNode.id) ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500" :
-                      progress?.unlockedNodes.includes(selectedNode.id) ? "bg-amber-500/10 border-amber-500/30 text-amber-500" :
-                      "bg-zinc-900 border-white/5 text-zinc-600"
-                    )}>
-                      {progress?.currentNode === selectedNode.id ? <Navigation className="w-5 h-5" /> :
-                       progress?.completedNodes.includes(selectedNode.id) ? <CheckCircle2 className="w-5 h-5" /> :
-                       progress?.unlockedNodes.includes(selectedNode.id) ? <Compass className="w-5 h-5" /> :
-                       <Lock className="w-5 h-5" />}
+                    {/* Header Section */}
+                    <div className="flex justify-between items-start mb-8">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-[0.3em] border shadow-inner",
+                            selectedNode.type.includes("Boss") ? "bg-red-500/10 border-red-500/30 text-red-500" :
+                            selectedNode.type === "Search" ? "bg-amber-500/10 border-amber-500/30 text-amber-500" :
+                            "bg-primary/10 border-primary/30 text-primary"
+                          )}>
+                            {selectedNode.type}
+                          </div>
+                          <div className="h-px w-8 bg-white/10" />
+                          <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest">Section {selectedNode.section}</span>
+                        </div>
+                        <h2 className={cn(
+                          "text-4xl md:text-5xl text-white font-serif italic tracking-tight leading-tight",
+                          selectedNode.type.includes("Boss") && "gold-gradient-text"
+                        )}>
+                          {selectedNode.name}
+                        </h2>
+                      </div>
+                      <button 
+                        onClick={() => setSelectedNode(null)}
+                        className="p-3 rounded-full hover:bg-white/5 text-zinc-600 hover:text-white transition-all border border-white/5"
+                      >
+                        <ChevronRight className="rotate-90 w-5 h-5" />
+                      </button>
                     </div>
-                    <div>
-                      <p className="text-[8px] uppercase font-black tracking-widest text-zinc-500">Node Status</p>
-                      <p className="text-sm text-zinc-200 font-serif italic">
-                        {progress?.currentNode === selectedNode.id ? "Presently Occupying" :
-                         progress?.completedNodes.includes(selectedNode.id) ? "Chronicle Recorded" :
-                         progress?.unlockedNodes.includes(selectedNode.id) ? "Path Visible" :
-                         "Obscured by Mist"}
+
+                    {/* Description Box */}
+                    <div className="relative mb-10 p-8 rounded-3xl bg-black/40 border border-white/5 overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-40" />
+                      <p className="relative z-10 text-zinc-400 italic leading-relaxed text-xl font-serif">
+                        "{selectedNode.description}"
                       </p>
                     </div>
-                  </div>
 
-                  {/* Locked State Checklist */}
-                  {selectedNode.requirements && (
-                    <div className="p-8 rounded-[2rem] bg-zinc-900/40 border border-white/5 space-y-6">
-                      <div className="flex items-center justify-between">
-                         <h4 className="text-[9px] text-zinc-500 font-black uppercase tracking-[0.4em] flex items-center gap-2">
-                           <Lock className="w-3 h-3" /> Entry Requirements
-                         </h4>
-                         {!checkRequirements(selectedNode) && (
-                           <span className="text-[8px] text-amber-500/60 uppercase font-black animate-pulse">Required Artifacts Missing</span>
-                         )}
-                      </div>
-                      
-                      <div className="space-y-3">
-                        {selectedNode.requirements.key && (
-                          <div className={cn(
-                            "flex justify-between items-center p-5 rounded-xl border transition-all",
-                            progress.inventoryKeys.includes(selectedNode.requirements.key) ? "bg-primary/5 border-primary/20 text-primary" : "bg-white/[0.02] border-white/5 text-zinc-600"
-                          )}>
-                            <div className="flex items-center gap-4">
-                              <Key className="w-4 h-4" />
-                              <span className="text-[11px] uppercase font-black tracking-widest">{selectedNode.requirements.key.replace("-", " ")}</span>
-                            </div>
-                            {progress.inventoryKeys.includes(selectedNode.requirements.key) ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                          </div>
-                        )}
-                        {selectedNode.requirements.stat && (
-                          <div className={cn(
-                            "flex justify-between items-center p-5 rounded-xl border transition-all",
-                            stats[selectedNode.requirements.stat.name] >= selectedNode.requirements.stat.value ? "bg-blue-500/5 border-blue-500/20 text-blue-400" : "bg-white/[0.02] border-white/5 text-zinc-600"
-                          )}>
-                            <div className="flex items-center gap-4">
-                              <Sparkles className="w-4 h-4" />
-                              <span className="text-[11px] uppercase font-black tracking-widest">{selectedNode.requirements.stat.name} {selectedNode.requirements.stat.value}+</span>
-                            </div>
-                            {stats[selectedNode.requirements.stat.name] >= selectedNode.requirements.stat.value ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                          </div>
-                        )}
+                    {/* Requirements / Status Checklist */}
+                    <div className="mb-10 space-y-6">
+                      <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center border",
+                          progress?.currentNode === selectedNode.id ? "bg-primary/10 border-primary/30 text-primary" :
+                          progress?.completedNodes.includes(selectedNode.id) ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500" :
+                          progress?.unlockedNodes.includes(selectedNode.id) ? "bg-amber-500/10 border-amber-500/30 text-amber-500" :
+                          "bg-zinc-900 border-white/5 text-zinc-600"
+                        )}>
+                          {progress?.currentNode === selectedNode.id ? <Navigation className="w-5 h-5" /> :
+                           progress?.completedNodes.includes(selectedNode.id) ? <CheckCircle2 className="w-5 h-5" /> :
+                           progress?.unlockedNodes.includes(selectedNode.id) ? <Compass className="w-5 h-5" /> :
+                           <Lock className="w-5 h-5" />}
+                        </div>
+                        <div>
+                          <p className="text-[8px] uppercase font-black tracking-widest text-zinc-500">Node Status</p>
+                          <p className="text-sm text-zinc-200 font-serif italic">
+                            {progress?.currentNode === selectedNode.id ? "Presently Occupying" :
+                             progress?.completedNodes.includes(selectedNode.id) ? "Chronicle Recorded" :
+                             progress?.unlockedNodes.includes(selectedNode.id) ? "Path Visible" :
+                             "Obscured by Mist"}
+                          </p>
+                        </div>
                       </div>
 
-                      {/* Suggested Next Step */}
-                      {!checkRequirements(selectedNode) && (
-                        <div className="pt-4 border-t border-white/5">
-                           <p className="text-[8px] uppercase font-black tracking-widest text-zinc-600 mb-2">Suggested Next Step</p>
-                           <p className="text-[10px] text-zinc-400 font-serif italic">
-                             {selectedNode.requirements.key === "rust-key" ? "Scour the Farmhouse Ruins or Ash Field for a rusted relic." :
-                              selectedNode.requirements.key === "steel-gate-key" ? "Seek audience with the rebels to obtain the City of Steel clearance." :
-                              "Consult your map for other trails to increase your stats or find hidden keys."}
-                           </p>
+                      {/* Locked State Checklist */}
+                      {selectedNode.requirements && (
+                        <div className="p-8 rounded-[2rem] bg-zinc-900/40 border border-white/5 space-y-6">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-[9px] text-zinc-500 font-black uppercase tracking-[0.4em] flex items-center gap-2">
+                              <Lock className="w-3 h-3" /> Entry Requirements
+                            </h4>
+                            {isInternal && (
+                               <div className="flex items-center gap-2 px-3 py-1 bg-primary/20 border border-primary/30 rounded-full">
+                                 <div className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                                 <span className="text-[7px] uppercase font-black tracking-widest text-primary">Owner Override Active</span>
+                               </div>
+                            )}
+                            {!isInternal && !checkRequirements(selectedNode) && (
+                               <span className="text-[8px] text-amber-500/60 uppercase font-black animate-pulse">Required Artifacts Missing</span>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-3">
+                            {selectedNode.requirements.key && (
+                              <div className={cn(
+                                "flex justify-between items-center p-5 rounded-xl border transition-all",
+                                progress.inventoryKeys.includes(selectedNode.requirements.key) ? "bg-primary/5 border-primary/20 text-primary" : "bg-white/[0.02] border-white/5 text-zinc-600"
+                              )}>
+                                <div className="flex items-center gap-4">
+                                  <Key className="w-4 h-4" />
+                                  <span className="text-[11px] uppercase font-black tracking-widest">{selectedNode.requirements.key.replace("-", " ")}</span>
+                                </div>
+                                {progress.inventoryKeys.includes(selectedNode.requirements.key) ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                              </div>
+                            )}
+                            {selectedNode.requirements.event && (
+                              <div className={cn(
+                                "flex justify-between items-center p-5 rounded-xl border transition-all",
+                                progress.completedNodes.includes(selectedNode.requirements.event) ? "bg-blue-500/5 border-blue-500/20 text-blue-400" : "bg-white/[0.02] border-white/5 text-zinc-600"
+                              )}>
+                                <div className="flex items-center gap-4">
+                                  <Book className="w-4 h-4" />
+                                  <span className="text-[11px] uppercase font-black tracking-widest">Complete: {selectedNode.requirements.event.split("_").pop()?.replace("-", " ")}</span>
+                                </div>
+                                {progress.completedNodes.includes(selectedNode.requirements.event) ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                              </div>
+                            )}
+                            {selectedNode.requirements.stat && (
+                              <div className={cn(
+                                "flex justify-between items-center p-5 rounded-xl border transition-all",
+                                stats[selectedNode.requirements.stat.name] >= selectedNode.requirements.stat.value ? "bg-blue-500/5 border-blue-500/20 text-blue-400" : "bg-white/[0.02] border-white/5 text-zinc-600"
+                              )}>
+                                <div className="flex items-center gap-4">
+                                  <Sparkles className="w-4 h-4" />
+                                  <span className="text-[11px] uppercase font-black tracking-widest">{selectedNode.requirements.stat.name} {selectedNode.requirements.stat.value}+</span>
+                                </div>
+                                {stats[selectedNode.requirements.stat.name] >= selectedNode.requirements.stat.value ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                              </div>
+                            )}
+                            {selectedNode.requirements.OR && (
+                              <div className="space-y-2">
+                                <p className="text-[7px] text-zinc-600 uppercase font-black tracking-[0.3em] text-center py-2 italic">— OR —</p>
+                                {selectedNode.requirements.OR.map((req, i) => (
+                                  <div key={i} className={cn(
+                                    "flex justify-between items-center p-4 rounded-xl border transition-all",
+                                    (req.key && progress.inventoryKeys.includes(req.key)) || (req.event && progress.completedNodes.includes(req.event)) ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-500" : "bg-white/[0.01] border-white/5 text-zinc-700"
+                                  )}>
+                                    <div className="flex items-center gap-4">
+                                      {req.key ? <Key className="w-3.5 h-3.5" /> : <Book className="w-3.5 h-3.5" />}
+                                      <span className="text-[10px] uppercase font-black tracking-widest">
+                                        {req.key ? req.key.replace("-", " ") : `Event: ${req.event?.split("_").pop()}`}
+                                      </span>
+                                    </div>
+                                    {(req.key && progress.inventoryKeys.includes(req.key)) || (req.event && progress.completedNodes.includes(req.event)) ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {!checkRequirements(selectedNode) && (
+                            <div className="pt-4 border-t border-white/5">
+                              <p className="text-[8px] uppercase font-black tracking-widest text-zinc-600 mb-2">Suggested Next Step</p>
+                              <p className="text-[10px] text-zinc-400 font-serif italic">
+                                {selectedNode.requirements.key === "rust-key" ? "Scour the Farmhouse Ruins or Ash Field for a rusted relic." :
+                                 selectedNode.requirements.key === "steel-gate-key" ? "Seek audience with the rebels to obtain the City of Steel clearance." :
+                                 "Consult your map for other trails to increase your stats or find hidden keys."}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
 
-                {/* Actions Section */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {progress?.currentNode === selectedNode.id ? (
-                    <>
-                      {(selectedNode.type === "Search" || selectedNode.type === "EncounterSearch" || selectedNode.type === "HiddenSearch") && (
+                    {/* Actions Section */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {progress?.currentNode === selectedNode.id ? (
+                        <>
+                          {(selectedNode.type === "Search" || selectedNode.type === "EncounterSearch" || selectedNode.type === "HiddenSearch") && (
+                            <motion.button 
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => handleSearch(selectedNode)}
+                              disabled={progress.actionPoints < 1 || isProcessing}
+                              className="premium-button premium-button-gold py-6 text-xl flex items-center justify-center gap-4 rounded-2xl disabled:opacity-30"
+                            >
+                              <Search className="w-6 h-6" /> 
+                              <div className="text-left">
+                                <p className="leading-none mb-1">Search Area</p>
+                                <p className="text-[8px] uppercase tracking-widest opacity-60">Cost: 1 AP</p>
+                              </div>
+                            </motion.button>
+                          )}
+                          {selectedNode.eventId && !progress.completedNodes.includes(selectedNode.eventId) && (
+                             <motion.button 
+                               whileHover={{ scale: 1.02 }}
+                               whileTap={{ scale: 0.98 }}
+                               onClick={() => triggerStoryEvent(selectedNode.eventId!)}
+                               className="premium-button py-6 text-xl flex items-center justify-center gap-4 rounded-2xl"
+                             >
+                               <Book className="w-6 h-6" />
+                               <div className="text-left">
+                                 <p className="leading-none mb-1">Begin Event</p>
+                                 <p className="text-[8px] uppercase tracking-widest opacity-60">Story Unfolds</p>
+                               </div>
+                             </motion.button>
+                          )}
+                          <div className="flex items-center justify-center p-6 rounded-2xl border border-white/5 bg-white/[0.01] text-zinc-600 font-serif italic text-sm italic col-span-full">
+                             You are currently here.
+                          </div>
+                        </>
+                      ) : progress?.unlockedNodes.includes(selectedNode.id) ? (
                         <motion.button 
-                          whileHover={{ scale: 1.02 }}
+                          whileHover={{ scale: 1.02, boxShadow: "0 0 40px rgba(200,155,44,0.3)" }}
                           whileTap={{ scale: 0.98 }}
-                          onClick={() => handleSearch(selectedNode)}
-                          disabled={progress.actionPoints < 1 || isProcessing}
-                          className="premium-button premium-button-gold py-6 text-xl flex items-center justify-center gap-4 rounded-2xl disabled:opacity-30"
+                          onClick={() => handleMove(selectedNode)}
+                          disabled={progress.actionPoints < 1 || isProcessing || !checkRequirements(selectedNode)}
+                          className="col-span-full premium-button premium-button-gold py-8 text-2xl flex items-center justify-center gap-5 disabled:grayscale disabled:opacity-30 rounded-3xl"
                         >
-                          <Search className="w-6 h-6" /> 
+                          <Navigation className="w-8 h-8" /> 
                           <div className="text-left">
-                            <p className="leading-none mb-1">Search Area</p>
-                            <p className="text-[8px] uppercase tracking-widest opacity-60">Cost: 1 AP</p>
+                            <p className="leading-none mb-1">Step into the Night</p>
+                            <p className="text-[9px] uppercase tracking-[0.2em] opacity-60">Travel Cost: 1 AP</p>
                           </div>
                         </motion.button>
+                      ) : (
+                        <div className="col-span-full glass-panel border-white/5 py-8 text-center rounded-3xl flex items-center justify-center gap-5 opacity-40 grayscale">
+                          <Lock className="w-8 h-8" />
+                          <span className="font-black uppercase tracking-[0.4em] text-lg">Path Obscured</span>
+                        </div>
                       )}
-                      {selectedNode.eventId && !progress.completedNodes.includes(selectedNode.eventId) && (
-                         <motion.button 
-                           whileHover={{ scale: 1.02 }}
-                           whileTap={{ scale: 0.98 }}
-                           onClick={() => triggerStoryEvent(selectedNode.eventId!)}
-                           className="premium-button py-6 text-xl flex items-center justify-center gap-4 rounded-2xl"
-                         >
-                           <Book className="w-6 h-6" />
-                           <div className="text-left">
-                             <p className="leading-none mb-1">Begin Event</p>
-                             <p className="text-[8px] uppercase tracking-widest opacity-60">Story Unfolds</p>
-                           </div>
-                         </motion.button>
+                      
+                      {progress?.unlockedNodes.includes(selectedNode.id) && (
+                        <button 
+                          onClick={() => setSelectedNode(null)}
+                          className="col-span-full py-4 text-[9px] text-zinc-600 hover:text-white uppercase font-black tracking-widest transition-all"
+                        >
+                          Dismiss View
+                        </button>
                       )}
-                      <div className="flex items-center justify-center p-6 rounded-2xl border border-white/5 bg-white/[0.01] text-zinc-600 font-serif italic text-sm italic col-span-full">
-                         You are currently here.
-                      </div>
-                    </>
-                  ) : progress?.unlockedNodes.includes(selectedNode.id) ? (
-                    <motion.button 
-                      whileHover={{ scale: 1.02, boxShadow: "0 0 40px rgba(200,155,44,0.3)" }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleMove(selectedNode)}
-                      disabled={progress.actionPoints < 1 || isProcessing || !checkRequirements(selectedNode)}
-                      className="col-span-full premium-button premium-button-gold py-8 text-2xl flex items-center justify-center gap-5 disabled:grayscale disabled:opacity-30 rounded-3xl"
-                    >
-                      <Navigation className="w-8 h-8" /> 
-                      <div className="text-left">
-                        <p className="leading-none mb-1">Step into the Night</p>
-                        <p className="text-[9px] uppercase tracking-[0.2em] opacity-60">Travel Cost: 1 AP</p>
-                      </div>
-                    </motion.button>
-                  ) : (
-                    <div className="col-span-full glass-panel border-white/5 py-8 text-center rounded-3xl flex items-center justify-center gap-5 opacity-40 grayscale">
-                      <Lock className="w-8 h-8" />
-                      <span className="font-black uppercase tracking-[0.4em] text-lg">Path Obscured</span>
                     </div>
-                  )}
-                  
-                  {/* Cancel Button */}
-                  {progress?.unlockedNodes.includes(selectedNode.id) && (
-                    <button 
-                      onClick={() => setSelectedNode(null)}
-                      className="col-span-full py-4 text-[9px] text-zinc-600 hover:text-white uppercase font-black tracking-widest transition-all"
-                    >
-                      Dismiss View
-                    </button>
-                  )}
+                  </motion.div>
                 </div>
-              </motion.div>
-            </div>
-          </div>
+              </div>
+            </motion.div>
           )}
-
 
           {/* Story Event - Narrative Immersion */}
           {activeEvent && (
@@ -1067,7 +1348,6 @@ export default function CampaignBoard() {
                   animate={{ y: 0, opacity: 1 }} 
                   className="w-full max-w-4xl glass-panel p-8 md:p-20 text-center space-y-12 border-primary/30 rounded-[3rem] md:rounded-[4rem] bg-zinc-950/90 shadow-[0_0_150px_rgba(0,0,0,1)] relative overflow-hidden"
                 >
-                {/* Decorative Elements */}
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                 <Book className="absolute -top-10 -right-10 w-48 h-48 text-primary/5 -rotate-12 pointer-events-none" />
 
@@ -1083,14 +1363,38 @@ export default function CampaignBoard() {
                   <div className="space-y-4">
                     <h2 className="text-5xl md:text-7xl text-white font-serif italic drop-shadow-2xl">{activeEvent.title}</h2>
                     <div className="h-px w-24 bg-primary/20 mx-auto" />
-                    <p className="text-xl md:text-2xl text-zinc-400 italic leading-relaxed max-w-2xl mx-auto font-serif bg-white/[0.02] p-8 rounded-3xl border border-white/5">
+                    <p className="text-xl md:text-2xl text-zinc-400 italic leading-relaxed max-w-2xl mx-auto font-serif bg-white/[0.02] p-8 rounded-3xl border border-white/5 shadow-inner">
                       "{activeEvent.description}"
                     </p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 pt-4">
-                  <p className="text-[9px] uppercase tracking-[0.4em] text-zinc-500 font-black mb-2">Choose Your Path</p>
+                <div className="grid grid-cols-1 gap-4 pt-4 max-w-3xl mx-auto w-full">
+                  <div className="flex items-center justify-between px-6">
+                    <p className="text-[9px] uppercase tracking-[0.4em] text-zinc-500 font-black">Choose Your Path</p>
+                    <div className="flex gap-4">
+                      {isInternal && (
+                        <>
+                          <button 
+                            onClick={() => handleEventChoice(activeEvent.choices[0])}
+                            className="text-[8px] uppercase font-black tracking-widest text-primary/40 hover:text-primary transition-colors flex items-center gap-2"
+                          >
+                            <Wand2 className="w-3 h-3" /> Owner: Force Resolve
+                          </button>
+                          <div className="px-3 py-1 bg-primary/20 border border-primary/30 rounded-full flex items-center gap-2">
+                            <div className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                            <span className="text-[7px] uppercase font-black tracking-widest text-primary">Owner Override Active</span>
+                          </div>
+                        </>
+                      )}
+                      <button 
+                        onClick={() => setActiveEvent(null)}
+                        className="text-[8px] uppercase font-black tracking-widest text-zinc-600 hover:text-white transition-colors"
+                      >
+                        Return to Map
+                      </button>
+                    </div>
+                  </div>
                   {activeEvent.choices.map((choice: any) => (
                     <motion.button
                       key={choice.id}
@@ -1126,8 +1430,8 @@ export default function CampaignBoard() {
                       <div className="flex items-center gap-6 relative z-10">
                         <div className="flex flex-col items-center md:items-end gap-2">
                            <span className={cn(
-                             "text-[9px] uppercase font-black tracking-[0.2em] px-5 py-2 rounded-full border shadow-inner",
-                             choice.canDo ? "bg-primary/10 border-primary/30 text-primary" : "bg-zinc-800 border-white/5 text-zinc-600"
+                             "text-[9px] uppercase font-black tracking-[0.2em] px-5 py-2 rounded-full border shadow-inner transition-all",
+                             choice.canDo ? "bg-primary/10 border-primary/30 text-primary" : "bg-zinc-800 border-white/10 text-zinc-400 opacity-60"
                            )}>
                              {choice.req}
                            </span>
@@ -1137,7 +1441,7 @@ export default function CampaignBoard() {
                              </div>
                            ) : (
                              <div className="flex items-center gap-2 text-red-500/60 text-[8px] uppercase font-black">
-                               <Lock className="w-3 h-3" /> Locked
+                               <Lock className="w-3 h-3" /> Requirements Not Met
                              </div>
                            )}
                         </div>
@@ -1151,10 +1455,100 @@ export default function CampaignBoard() {
                     </motion.button>
                   ))}
                 </div>
+                
+                <div className="pt-12 border-t border-white/5 flex flex-col items-center gap-6">
+                   <div className="flex gap-6">
+                      {[
+                        { icon: <Compass className="w-4 h-4" />, label: "Courage", value: stats?.courage || 0 },
+                        { icon: <Star className="w-4 h-4" />, label: "Hope", value: stats?.hope || 0 },
+                        { icon: <Eye className="w-4 h-4" />, label: "Memory", value: stats?.memory || 0 },
+                      ].map(s => (
+                        <div key={s.label} className="flex flex-col items-center gap-1">
+                          <div className="p-2 bg-white/5 rounded-lg border border-white/10 text-zinc-500">
+                            {s.icon}
+                          </div>
+                          <span className="text-[7px] uppercase font-bold text-zinc-600">{s.label}</span>
+                          <span className="text-xs text-white font-serif italic">{s.value}</span>
+                        </div>
+                      ))}
+                   </div>
+                   <p className="text-[10px] text-zinc-600 font-serif italic">Your current attributes determine which paths are open to you.</p>
+                </div>
               </motion.div>
             </div>
+          </div>
           )}
 
+          {/* Story Result Modal */}
+          {storyResult && (
+            <div className="fixed inset-0 z-[85] bg-black/99 backdrop-blur-3xl overflow-y-auto">
+              <div className="min-h-full flex items-center justify-center p-6">
+                <motion.div 
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-full max-w-2xl glass-panel p-12 md:p-24 text-center space-y-12 border-primary/20 bg-zinc-950/90 rounded-[3rem] shadow-2xl relative"
+                >
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                  
+                  <div className="space-y-6">
+                    <div className="w-20 h-20 rounded-[2rem] bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto shadow-2xl">
+                      <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                    </div>
+                    <h2 className="text-5xl text-white font-serif italic">{storyResult.title}</h2>
+                    <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5">
+                      <p className="text-xl text-zinc-400 italic leading-relaxed font-serif">
+                        "{storyResult.message}"
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <p className="text-[9px] uppercase tracking-[0.4em] text-zinc-500 font-black">Spoils of the Choice</p>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {storyResult.rewards.map((reward: any, i: number) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.1 }}
+                          className={cn(
+                            "px-6 py-3 rounded-2xl border flex items-center gap-4",
+                            reward.type === 'damage' ? "bg-red-500/10 border-red-500/30 text-red-500" :
+                            reward.type === 'stat' ? "bg-blue-500/10 border-blue-500/30 text-blue-400" :
+                            "bg-primary/10 border-primary/30 text-primary"
+                          )}
+                        >
+                          {reward.type === 'damage' ? <Skull className="w-4 h-4" /> : 
+                           reward.type === 'stat' ? <Sparkles className="w-4 h-4" /> : 
+                           <Trophy className="w-4 h-4" />}
+                          <span className="text-xs uppercase font-black tracking-widest">{reward.name}</span>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <motion.button 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setStoryResult(null)}
+                      className="premium-button premium-button-gold py-6 rounded-2xl flex items-center justify-center gap-3"
+                    >
+                      <Navigation className="w-5 h-5" /> Continue
+                    </motion.button>
+                    <motion.button 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => { setStoryResult(null); setSelectedNode(null); }}
+                      className="glass-panel border-white/10 hover:border-white/30 text-zinc-400 hover:text-white py-6 rounded-2xl transition-all font-black uppercase tracking-widest text-[10px]"
+                    >
+                      Return to Map
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          )}
 
           {/* Encounter - Battle Tension */}
           {activeEncounter && (
@@ -1162,16 +1556,22 @@ export default function CampaignBoard() {
               <div className="min-h-full flex items-center justify-center p-0 md:p-6">
                 <motion.div 
                   initial={{ scale: 1.1, opacity: 0 }} 
-                  animate={{ scale: 1, opacity: 1 }} 
+                  animate={{ 
+                    scale: 1, 
+                    opacity: 1,
+                    x: isAttacking ? [0, -10, 10, -10, 10, 0] : 0,
+                    filter: isAttacking ? "brightness(1.5)" : "brightness(1)"
+                  }} 
+                  transition={{
+                    duration: isAttacking ? 0.4 : 0.6
+                  }}
                   className="w-full h-full md:h-auto md:max-w-5xl glass-panel p-8 md:p-20 flex flex-col items-center justify-center space-y-12 border-red-900/20 bg-[#050505]/95 shadow-[0_0_200px_rgba(139,17,17,0.2)] relative"
                 >
-                {/* Battle Background Decor */}
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
                   <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-red-600/20 to-transparent" />
                   <Skull className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] text-red-600/5 rotate-12" />
                 </div>
 
-                {/* Combat HUD Header */}
                 <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                   <div className="flex flex-col items-center md:items-start gap-4">
                     <div className="flex items-center gap-3">
@@ -1196,7 +1596,6 @@ export default function CampaignBoard() {
                     )}
                   </div>
 
-                  {/* Enemy Health / Stats */}
                   <div className="flex flex-col items-center md:items-end gap-3">
                     <div className="flex gap-2">
                        {[...Array(activeEncounter.health)].map((_, i) => (
@@ -1215,7 +1614,6 @@ export default function CampaignBoard() {
                   </div>
                 </div>
 
-                {/* Encounter Main Body */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 w-full relative z-10">
                   <div className="space-y-8">
                     <div className="p-8 rounded-[2.5rem] bg-black/60 border border-white/5 relative overflow-hidden group">
@@ -1251,7 +1649,6 @@ export default function CampaignBoard() {
                     )}
                   </div>
 
-                  {/* Actions & Rewards Preview */}
                   <div className="flex flex-col gap-4">
                     <p className="text-[9px] uppercase tracking-[0.4em] text-zinc-500 font-black mb-2">Combat Protocol</p>
                     {activeEncounter.responses?.map((resp: any) => (
@@ -1317,15 +1714,13 @@ export default function CampaignBoard() {
                   </div>
                 </div>
 
-                {/* Footer Warning */}
                 <p className="text-[8px] uppercase tracking-[0.8em] text-red-600/40 font-black relative z-10 animate-pulse">
                   Unauthorized Personnel detected in Restricted Maw Sector
                 </p>
-              </motion.div>
+                </motion.div>
+              </div>
             </div>
-          </div>
           )}
-
 
           {/* Reward Modal - Cinematic Loot Reveal */}
           {activeReward && (
@@ -1336,7 +1731,6 @@ export default function CampaignBoard() {
                   animate={{ y: 0, opacity: 1, scale: 1 }}
                   className="w-full max-w-xl glass-panel p-8 md:p-20 text-center space-y-10 border-primary/30 rounded-[3rem] md:rounded-[4rem] bg-zinc-950/90 shadow-[0_0_150px_rgba(200,155,44,0.1)] relative overflow-hidden"
                 >
-                {/* Shine Animation */}
                 <motion.div 
                   animate={{ x: ["-100%", "100%"] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -1391,9 +1785,9 @@ export default function CampaignBoard() {
                 >
                   Confirm Discovery
                 </motion.button>
-              </motion.div>
+                </motion.div>
+              </div>
             </div>
-          </div>
           )}
 
           {/* Quest Completion Modal - Dramatic Achievement */}
@@ -1449,26 +1843,22 @@ export default function CampaignBoard() {
                 </div>
               </motion.div>
             </div>
+          </div>
           )}
         </AnimatePresence>
         
         {/* Map Legend Modal */}
         <AnimatePresence>
           {isLegendOpen && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsLegendOpen(false)}
-                className="absolute inset-0 bg-black/60 backdrop-blur-xl"
-              />
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-lg glass-panel rounded-[2.5rem] border-white/10 bg-black/80 shadow-2xl overflow-hidden p-10"
-              >
+            <div className="fixed inset-0 z-[110] overflow-y-auto bg-black/60 backdrop-blur-md" onClick={() => setIsLegendOpen(false)}>
+              <div className="min-h-full flex items-center justify-center p-6">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  className="relative w-full max-w-lg glass-panel rounded-[2.5rem] border-white/10 bg-black/80 shadow-2xl overflow-hidden p-10"
+                  onClick={(e) => e.stopPropagation()}
+                >
                 <button 
                   onClick={() => setIsLegendOpen(false)}
                   className="absolute top-8 right-8 p-2 text-zinc-500 hover:text-white transition-colors"
@@ -1511,6 +1901,7 @@ export default function CampaignBoard() {
                 </div>
               </motion.div>
             </div>
+          </div>
           )}
         </AnimatePresence>
 
@@ -1543,6 +1934,30 @@ export default function CampaignBoard() {
             ))}
           </AnimatePresence>
         </div>
+        <AnimatePresence>
+          {activeEffects.map(effect => (
+            <StatPop 
+              key={effect.id} 
+              value={effect.value} 
+              type={effect.type} 
+              x={effect.x} 
+              y={effect.y} 
+            />
+          ))}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showUnlockAnim && <UnlockAnimation />}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {activeEncounter?.isBoss && <BossWarning title={activeEncounter.name} />}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {questComplete && <QuestCompleteEffect title={questComplete.title} />}
+        </AnimatePresence>
+
         <BetaNotice />
       </div>
     </MainLayout>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, UserCircle, Shield, Menu, X, Sparkles } from "lucide-react";
+import { Bell, UserCircle, Shield, Menu, X, Sparkles, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function Navbar() {
-  const { user, profile } = useAuth();
+  const { user, profile, logout } = useAuth();
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -130,46 +130,60 @@ export function Navbar() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            className="fixed inset-0 z-40 bg-black/95 backdrop-blur-3xl lg:hidden flex flex-col items-center justify-center p-8 gap-10"
+            className="fixed inset-0 z-40 bg-black/95 backdrop-blur-3xl lg:hidden overflow-y-auto"
           >
-            <div className="absolute top-10 right-10">
-               <button onClick={() => setMobileMenuOpen(false)} className="p-4 text-zinc-500"><X className="w-8 h-8" /></button>
-            </div>
+            <div className="min-h-full flex flex-col items-center justify-center p-8 gap-10">
+              <div className="absolute top-10 right-10">
+                 <button onClick={() => setMobileMenuOpen(false)} className="p-4 text-zinc-500"><X className="w-8 h-8" /></button>
+              </div>
 
-            <div className="flex flex-col items-center gap-6">
-              {navLinks.map((link) => (
-                <Link 
-                  key={link.href}
-                  href={link.href} 
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    "text-3xl font-serif italic tracking-wider transition-all",
-                    pathname === link.href ? "gold-gradient-text" : "text-zinc-600"
-                  )}
+              <div className="flex flex-col items-center gap-6">
+                {navLinks.map((link) => (
+                  <Link 
+                    key={link.href}
+                    href={link.href} 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "text-3xl font-serif italic tracking-wider transition-all",
+                      pathname === link.href ? "gold-gradient-text" : "text-zinc-600"
+                    )}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+                {isAdmin && (
+                  <Link 
+                    href="/admin" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-2xl font-serif italic text-red-900 tracking-wider"
+                  >
+                    Admin Sanctum
+                  </Link>
+                )}
+              </div>
+
+              <div className="w-20 h-px bg-white/5" />
+              
+              <Link 
+                href="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="premium-button w-full max-w-xs text-center py-5 text-sm"
+              >
+                Player Dashboard
+              </Link>
+
+              {user && (
+                <button
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center gap-2 text-red-500/60 font-serif uppercase tracking-widest text-xs py-4"
                 >
-                  {link.name}
-                </Link>
-              ))}
-              {isAdmin && (
-                <Link 
-                  href="/admin" 
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-2xl font-serif italic text-red-900 tracking-wider"
-                >
-                  Admin Sanctum
-                </Link>
+                  <LogOut className="w-4 h-4" /> Sign Out
+                </button>
               )}
             </div>
-
-            <div className="w-20 h-px bg-white/5" />
-            
-            <Link 
-              href="/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className="premium-button w-full max-w-xs text-center py-5 text-sm"
-            >
-              Player Dashboard
-            </Link>
           </motion.div>
         )}
       </AnimatePresence>

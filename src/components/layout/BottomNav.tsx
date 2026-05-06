@@ -15,7 +15,7 @@ const mobileItems = [
   { name: "Campaign", href: "/campaign", icon: MapIcon },
   { name: "Cards", href: "/cards", icon: BookOpen },
   { name: "Library", href: "/library", icon: BookOpen },
-  { name: "Market", href: "/market", icon: Store },
+  { name: "Market", href: "/marketplace", icon: Store },
 ];
 
 export function BottomNav() {

@@ -643,93 +643,96 @@ export default function CharacterRegistry() {
         {/* Existing Add Modal (Optional fallback) */}
         <AnimatePresence>
           {isAdding && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="w-full max-w-2xl glass-panel p-12 space-y-10 rounded-[4rem] border-white/10 relative shadow-2xl"
-              >
-                <button onClick={() => setIsAdding(false)} className="absolute top-10 right-10 text-zinc-500 hover:text-white transition-colors"><X className="w-8 h-8" /></button>
-                
-                <div className="space-y-3">
-                  <h2 className="text-4xl font-serif italic text-white">Summon New Character</h2>
-                  <p className="text-sm text-zinc-500 font-serif italic">Initialize a manual entry in the registry bible.</p>
-                </div>
-
-                <form onSubmit={handleAddCharacter} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                      <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Character Identity</label>
-                      <input 
-                        type="text" 
-                        required
-                        value={newChar.characterName}
-                        onChange={e => setNewChar({...newChar, characterName: e.target.value})}
-                        className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl outline-none focus:border-primary/50 transition-all font-serif italic"
-                        placeholder="e.g. Dorothy Gale"
-                      />
-                    </div>
-                    <div className="space-y-3">
-                      <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Title / Display Name</label>
-                      <input 
-                        type="text" 
-                        required
-                        value={newChar.displayName}
-                        onChange={e => setNewChar({...newChar, displayName: e.target.value})}
-                        className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl outline-none focus:border-primary/50 transition-all font-serif italic"
-                        placeholder="e.g. The Silver Seeker"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="space-y-3">
-                      <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Book Origin</label>
-                      <input 
-                        type="text" 
-                        value={newChar.bookOrigin}
-                        onChange={e => setNewChar({...newChar, bookOrigin: e.target.value})}
-                        className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl outline-none focus:border-primary/50 transition-all font-serif italic"
-                      />
-                    </div>
-                    <div className="space-y-3">
-                      <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Designated Role</label>
-                      <select 
-                        value={newChar.role}
-                        onChange={e => setNewChar({...newChar, role: e.target.value})}
-                        className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none"
-                      >
-                        {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                    </div>
-                    <div className="space-y-3">
-                      <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Primary Faction</label>
-                      <select 
-                        value={newChar.faction}
-                        onChange={e => setNewChar({...newChar, faction: e.target.value})}
-                        className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none"
-                      >
-                        {FACTIONS.map(f => <option key={f} value={f}>{f}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
+            <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/95 backdrop-blur-xl" onClick={() => setIsAdding(false)}>
+              <div className="min-h-full flex items-center justify-center p-6">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="w-full max-w-2xl glass-panel p-12 space-y-10 rounded-[4rem] border-white/10 relative shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button onClick={() => setIsAdding(false)} className="absolute top-10 right-10 text-zinc-500 hover:text-white transition-colors"><X className="w-8 h-8" /></button>
+                  
                   <div className="space-y-3">
-                    <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Initial Chronicles</label>
-                    <textarea 
-                      value={newChar.description}
-                      onChange={e => setNewChar({...newChar, description: e.target.value})}
-                      className="w-full bg-black/40 border border-white/5 p-6 rounded-3xl outline-none focus:border-primary/50 transition-all min-h-[120px] text-sm font-serif italic"
-                      placeholder="The character's primary motivation and role in the chronicles..."
-                    />
+                    <h2 className="text-4xl font-serif italic text-white">Summon New Character</h2>
+                    <p className="text-sm text-zinc-500 font-serif italic">Initialize a manual entry in the registry bible.</p>
                   </div>
 
-                  <button type="submit" className="w-full premium-button premium-button-gold py-6 rounded-[2.5rem] text-2xl">
-                    Bind to Registry
-                  </button>
-                </form>
-              </motion.div>
+                  <form onSubmit={handleAddCharacter} className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-3">
+                        <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Character Identity</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={newChar.characterName}
+                          onChange={e => setNewChar({...newChar, characterName: e.target.value})}
+                          className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl outline-none focus:border-primary/50 transition-all font-serif italic"
+                          placeholder="e.g. Dorothy Gale"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Title / Display Name</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={newChar.displayName}
+                          onChange={e => setNewChar({...newChar, displayName: e.target.value})}
+                          className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl outline-none focus:border-primary/50 transition-all font-serif italic"
+                          placeholder="e.g. The Silver Seeker"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                      <div className="space-y-3">
+                        <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Book Origin</label>
+                        <input 
+                          type="text" 
+                          value={newChar.bookOrigin}
+                          onChange={e => setNewChar({...newChar, bookOrigin: e.target.value})}
+                          className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl outline-none focus:border-primary/50 transition-all font-serif italic"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Designated Role</label>
+                        <select 
+                          value={newChar.role}
+                          onChange={e => setNewChar({...newChar, role: e.target.value})}
+                          className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none"
+                        >
+                          {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Primary Faction</label>
+                        <select 
+                          value={newChar.faction}
+                          onChange={e => setNewChar({...newChar, faction: e.target.value})}
+                          className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl outline-none focus:border-primary/50 transition-all cursor-pointer appearance-none"
+                        >
+                          {FACTIONS.map(f => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-[11px] uppercase font-black tracking-widest text-zinc-500 ml-1">Initial Chronicles</label>
+                      <textarea 
+                        value={newChar.description}
+                        onChange={e => setNewChar({...newChar, description: e.target.value})}
+                        className="w-full bg-black/40 border border-white/5 p-6 rounded-3xl outline-none focus:border-primary/50 transition-all min-h-[120px] text-sm font-serif italic"
+                        placeholder="The character's primary motivation and role in the chronicles..."
+                      />
+                    </div>
+
+                    <button type="submit" className="w-full premium-button premium-button-gold py-6 rounded-[2.5rem] text-2xl">
+                      Bind to Registry
+                    </button>
+                  </form>
+                </motion.div>
+              </div>
             </div>
           )}
         </AnimatePresence>

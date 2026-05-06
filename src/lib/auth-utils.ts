@@ -57,6 +57,59 @@ export async function initializeUser(uid: string, email: string | null, username
       book1_quest_first_step: { status: "active", steps: [] }
     },
     completed: false,
+    hasStartedCampaign: false,
+    startedAt: null,
+    lastPlayedAt: null,
     updatedAt: serverTimestamp(),
   });
+}
+export function hasPaidAccess(profile: any): boolean {
+  if (!profile) return false;
+  const uid = profile.uid;
+  if (isOwner(uid)) return true;
+  
+  return profile.membershipStatus === "paid" || 
+         profile.membershipStatus === "admin" || 
+         profile.membershipStatus === "owner" ||
+         profile.role === "admin" ||
+         profile.role === "owner";
+}
+
+export function isInternalUser(profile: any): boolean {
+  if (!profile) return false;
+  const uid = profile.uid;
+  if (isOwner(uid)) return true;
+  return profile.role === "admin" || profile.role === "owner" || profile.membershipStatus === "admin" || profile.membershipStatus === "owner";
+}
+
+export async function repairOwnerProfile(uid: string) {
+  if (!isOwner(uid)) return;
+
+  const userRef = doc(db, "users", uid);
+  const statsRef = doc(db, "playerStats", uid);
+  const progressRef = doc(db, "playerProgress", uid);
+
+  await setDoc(userRef, {
+    role: "owner",
+    membershipStatus: "owner",
+    verified: true,
+    billingStatus: "owner_override",
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  await setDoc(statsRef, {
+    health: 999,
+    courage: 99,
+    hope: 99,
+    steel: 99,
+    memory: 99,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  await setDoc(progressRef, {
+    actionPoints: 99,
+    hasStartedCampaign: true,
+    lastPlayedAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  }, { merge: true });
 }

@@ -50,7 +50,7 @@ export const BOOK_I_NODES: Node[] = [
   { id: "book1_node_003", name: "Collapsed Oil Derrick", type: "Search", section: 1, description: "A rusted monument to the old world. Useful scraps might be hidden here.", connectedNodes: ["book1_node_002", "book1_node_004", "book1_node_005"], x: 30, y: 55 },
   { id: "book1_node_004", name: "Gallows Circle", type: "Story", section: 1, description: "A ring of hanging trees. The past lingers here in the creak of the ropes.", connectedNodes: ["book1_node_003", "book1_node_005"], x: 40, y: 45, eventId: "book1_story_rescue_thatch" },
   { id: "book1_node_005", name: "Marshal Patrol Road", type: "Encounter", section: 1, description: "The Tin Enforcers keep a close watch on this path. Move quietly.", connectedNodes: ["book1_node_003", "book1_node_004", "book1_node_006"], x: 50, y: 50 },
-  { id: "book1_node_006", name: "Rebel Trail Gate", type: "LockedDoor", section: 1, description: "A heavy iron gate blocking the way to the City of Steel.", connectedNodes: ["book1_node_005", "book1_node_007"], x: 60, y: 40, requirements: { key: "rust-key", event: "book1_story_rescue_thatch" } },
+  { id: "book1_node_006", name: "Rebel Trail Gate", type: "LockedDoor", section: 1, description: "A heavy iron gate blocking the way to the City of Steel.", connectedNodes: ["book1_node_005", "book1_node_007"], x: 60, y: 40, requirements: { OR: [{ key: "rust-key" }, { event: "book1_story_rescue_thatch" }] } },
   
   // SECTION II
   { id: "book1_node_007", name: "Red Patrol Road", type: "DangerPath", section: 2, description: "A high-traffic route for the Marshal's scouts.", connectedNodes: ["book1_node_006", "book1_node_008", "book1_node_010"], x: 70, y: 55 },

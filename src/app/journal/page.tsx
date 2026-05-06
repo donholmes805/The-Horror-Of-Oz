@@ -267,7 +267,7 @@ export default function PathfinderJournal() {
                     <MapIcon className="w-4 h-4" /> Campaign Progression
                   </h2>
                   <Link href="/campaign" className="text-[9px] uppercase tracking-widest font-black text-zinc-500 hover:text-white transition-all flex items-center gap-2">
-                    Continue Campaign <ChevronRight className="w-3 h-3" />
+                    {progress?.hasStartedCampaign ? "Resume Adventure" : "Start Adventure"} <ChevronRight className="w-3 h-3" />
                   </Link>
                 </div>
 
@@ -610,8 +610,9 @@ export default function PathfinderJournal() {
                     {listings.length === 0 && trades.length === 0 && (
                       <p className="text-xs text-zinc-700 italic font-serif text-center pt-4 border-t border-white/5">No exchanges recorded yet.</p>
                     )}
-                 </div>
-               </section>
+                  </div>
+                </div>
+              </section>
 
                {/* 9. Account / Membership Panel */}
                <section className="space-y-8">
@@ -706,8 +707,6 @@ export default function PathfinderJournal() {
                    </button>
                  </div>
                </section>
-
-
 
             </div>
           </div>

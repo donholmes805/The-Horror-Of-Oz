@@ -12,9 +12,9 @@ import { db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
 export default function LibraryHome() {
-  const { user, profile } = useAuth();
+  const { user, profile, hasPaidAccess } = useAuth();
   const [progress, setProgress] = useState<any>(null);
-  const isPaid = profile?.membershipStatus === "paid" || profile?.membershipStatus === "admin" || profile?.membershipStatus === "owner";
+  const isPaid = hasPaidAccess;
 
   useEffect(() => {
     if (!user) return;
