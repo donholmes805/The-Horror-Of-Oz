@@ -2,8 +2,9 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { BOOK_I_NODES, Node } from "@/constants/campaign";
-import { MASTER_CARDS, MasterCard } from "@/constants/cards";
+import { BOOK_I_NODES, Node, BOOK_I_CLUES, CAMPAIGN_OBJECTIVES, Clue } from "@/constants/campaign";
+import { MASTER_CARDS, MasterCard, PlayableEffect } from "@/constants/cards";
+import { getDocs } from "firebase/firestore";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -11,6 +12,7 @@ import {
   MapPin, 
   Skull, 
   Search, 
+  History as HistoryIcon,
   Zap,
   ChevronRight,
   Info,
@@ -21,6 +23,7 @@ import {
   Timer,
   Sword,
   Trophy,
+  LogOut,
   Navigation,
   Compass,
   CheckCircle2,
@@ -35,6 +38,7 @@ import {
   HelpCircle,
   Volume2,
   VolumeX,
+  Wind,
   Wand2,
   RefreshCcw,
   Plus
@@ -68,7 +72,36 @@ export default function CampaignBoard() {
   const [isAttacking, setIsAttacking] = useState(false);
   const [activeEffects, setActiveEffects] = useState<{id: string, value: string, type: any, x: number, y: number}[]>([]);
   const [showUnlockAnim, setShowUnlockAnim] = useState(false);
+  const [playerInventoryCards, setPlayerInventoryCards] = useState<any[]>([]);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [combatState, setCombatState] = useState<any>(null);
+  const [challengeMath, setChallengeMath] = useState<any>(null);
+  const [showLog, setShowLog] = useState(false);
+  const [showObjectives, setShowObjectives] = useState(true);
+  const [isUIVisible, setIsUIVisible] = useState(true);
   const mapRef = useRef<HTMLDivElement>(null);
+
+  // Auto-center on load
+  useEffect(() => {
+    if (progress?.currentNode && !loading) {
+      setTimeout(centerOnCurrentNode, 500);
+    }
+  }, [loading, !!progress?.currentNode]);
+
+  // Fetch Player Cards Real-time
+  useEffect(() => {
+    if (!user) return;
+    
+    const cardsRef = collection(db, "users", user.uid, "playerCards");
+    const unsub = onSnapshot(cardsRef, (snapshot) => {
+      const cards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setPlayerInventoryCards(cards);
+    }, (error) => {
+      console.error("Inventory fetch error:", error);
+    });
+
+    return () => unsub();
+  }, [user]);
 
   // Sound System Sync
   useEffect(() => {
@@ -82,9 +115,9 @@ export default function CampaignBoard() {
   };
 
   const addEffect = (value: string, type: any, x?: number, y?: number) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    const effectX = x || mousePos.x || window.innerWidth / 2;
-    const effectY = y || mousePos.y || window.innerHeight / 2;
+    const id = `effect-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const effectX = x || mousePos.x || (typeof window !== 'undefined' ? window.innerWidth / 2 : 0);
+    const effectY = y || mousePos.y || (typeof window !== 'undefined' ? window.innerHeight / 2 : 0);
     setActiveEffects(prev => [...prev, { id, value, type, x: effectX, y: effectY }]);
     setTimeout(() => {
       setActiveEffects(prev => prev.filter(e => e.id !== id));
@@ -92,17 +125,111 @@ export default function CampaignBoard() {
   };
 
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    const id = Math.random().toString(36).substr(2, 9);
+    const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 4000);
   };
 
+  const performChallengeCheck = (baseStat: number, statName: string, difficulty: number, cardBonus: number = 0, clueBonus: number = 0) => {
+    const riskRoll = Math.floor(Math.random() * 3); // 0, 1, or 2
+    const total = baseStat + cardBonus + clueBonus + riskRoll;
+    const success = total >= difficulty;
+    
+    setChallengeMath({
+      statName,
+      baseStat,
+      cardBonus,
+      clueBonus,
+      riskRoll,
+      total,
+      difficulty,
+      success
+    });
+    
+    return success;
+  };
+
+  const updateChronicle = async (message: string) => {
+    if (!user || !progress) return;
+    const newLog = [message, ...(progress.chronicleLog || [])].slice(0, 15);
+    const progressRef = doc(db, "playerProgress", user.uid);
+    await updateDoc(progressRef, { chronicleLog: newLog }).catch(console.error);
+    setProgress((prev: any) => ({ ...prev, chronicleLog: newLog }));
+  };
+
+  const completeObjective = async (sectionId: string, taskId: string) => {
+    if (!user || !progress) return;
+    const currentSection = progress.sectionObjectives?.[sectionId] || { tasks: {}, completed: false };
+    if (currentSection.tasks[taskId]) return; // Already completed
+    
+    const updatedTasks = { ...currentSection.tasks, [taskId]: true };
+    const sectionDef = CAMPAIGN_OBJECTIVES[sectionId];
+    const allTasksCompleted = sectionDef.tasks.every(t => updatedTasks[t.id]);
+    
+    const progressRef = doc(db, "playerProgress", user.uid);
+    await updateDoc(progressRef, {
+      [`sectionObjectives.${sectionId}.tasks.${taskId}`]: true,
+      [`sectionObjectives.${sectionId}.completed`]: allTasksCompleted
+    }).catch(console.error);
+    
+    setProgress((prev: any) => ({
+      ...prev,
+      sectionObjectives: {
+        ...prev.sectionObjectives,
+        [sectionId]: {
+          ...currentSection,
+          tasks: updatedTasks,
+          completed: allTasksCompleted
+        }
+      }
+    }));
+    
+    const taskLabel = sectionDef.tasks.find(t => t.id === taskId)?.label || taskId;
+    addToast(`Objective Completed: ${taskLabel}`, 'success');
+    updateChronicle(`Accomplished: ${taskLabel}`);
+  };
+
+  const discoverClue = async (clueId: string) => {
+    if (!user || !progress || progress.playerClues?.includes(clueId)) return;
+    
+    const clue = BOOK_I_CLUES[clueId];
+    if (!clue) return;
+    
+    const progressRef = doc(db, "playerProgress", user.uid);
+    await updateDoc(progressRef, {
+      playerClues: arrayUnion(clueId)
+    }).catch(console.error);
+    
+    setProgress((prev: any) => ({
+      ...prev,
+      playerClues: [...(prev.playerClues || []), clueId]
+    }));
+    
+    addToast(`Clue Discovered: ${clue.title}`, 'success');
+    updateChronicle(`Found evidence: ${clue.title}`);
+    
+    if (clue.unlocksPath) {
+      if (!progress.revealedNodes.includes(clue.unlocksPath)) {
+         await updateDoc(progressRef, {
+           revealedNodes: arrayUnion(clue.unlocksPath)
+         }).catch(console.error);
+         setProgress((prev: any) => ({
+           ...prev,
+           revealedNodes: [...prev.revealedNodes, clue.unlocksPath]
+         }));
+         addToast("A new path has been revealed!", 'info');
+         playSfx('unlock');
+      }
+    }
+  };
+
   const handleNodeClick = (node: Node) => {
     if (progress?.revealedNodes.includes(node.id)) {
       playSfx('click');
       setSelectedNode(node);
+      setShowObjectives(false); // Clear screen for node detail
     }
   };
 
@@ -168,6 +295,21 @@ export default function CampaignBoard() {
             alliesUnlocked: [],
             allySupports: [],
             statusEffects: [],
+            playerClues: [],
+            chronicleLog: ["Entered the Red Country."],
+            sectionObjectives: {
+              "section_1": {
+                completed: false,
+                tasks: {
+                  visit_derrick: false,
+                  search_relic: false,
+                  reach_gallows: false,
+                  rescue_thatch: false,
+                  survive_patrol: false,
+                  unlock_gate: false
+                }
+              }
+            },
             questProgress: {
               book1_quest_first_step: { status: "active", steps: [] }
             },
@@ -365,6 +507,28 @@ playSfx('ui-click');
       setSelectedNode(null);
       addToast(`Moved to ${node.name}`, 'success');
 
+      if (node.id === "book1_node_003") {
+        await completeObjective("section_1", "visit_derrick");
+        await discoverClue("clue_rust_under_brick");
+      }
+      if (node.id === "book1_node_007") {
+        await completeObjective("section_1", "reach_gallows");
+      }
+      if (node.id === "book1_node_004") {
+        await discoverClue("clue_straw_knights_last_words");
+      }
+      if (node.id === "book1_node_005") {
+        await discoverClue("clue_marshal_patrol_pattern");
+      }
+      if (node.id === "book1_node_009") {
+        await discoverClue("clue_living_arches_whisper");
+      }
+      if (node.id === "book1_node_022") {
+        await discoverClue("clue_furnace_weakness");
+      }
+
+      updateChronicle(`Moved to ${node.name}.`);
+
       if (node.type === "FinalBoss") {
         playSfx('boss-warning');
         triggerBoss(node);
@@ -413,6 +577,9 @@ playSfx('ui-click');
       await updateDoc(doc(db, "playerProgress", user.uid), updates);
       setActiveReward(result);
       addToast(`Found: ${result.name}`, 'success');
+      
+      await completeObjective("section_1", "search_relic");
+      updateChronicle(`Searched ${node.name} and found ${result.name}.`);
     } catch (err) {
       console.error(err);
       addToast("Search failed.", 'error');
@@ -511,11 +678,32 @@ playSfx('ui-click');
     playSfx('story-choice');
 
     try {
+      let isSuccess = true;
+      if (!choice.isFallback) {
+        const statReq = choice.req.split(' ');
+        const statName = statReq[0];
+        const difficulty = parseInt(statReq[1]);
+        const cardBonus = selectedCardId ? 2 : 0; // Simplified for now
+        const clueBonus = 0;
+        isSuccess = performChallengeCheck(stats?.[statName.toLowerCase() as any] as number || 0, statName, difficulty, cardBonus, clueBonus);
+      }
+
+      if (!isSuccess) {
+        addToast(choice.failure || "The challenge proved too difficult.", "error");
+        setIsProcessing(false);
+        setActiveEvent(null);
+        return;
+      }
+
       const updates: any = {
         completedNodes: arrayUnion(activeEvent.id),
-        alliesUnlocked: arrayUnion("sir-hollin-thatch"),
         updatedAt: serverTimestamp()
       };
+
+      if (activeEvent.id === "book1_story_rescue_thatch") {
+        updates.alliesUnlocked = arrayUnion("sir-hollin-thatch");
+        await completeObjective("section_1", "rescue_thatch");
+      }
 
       if (progress?.questProgress?.book1_quest_first_step?.status === "active") {
         const quest = progress.questProgress.book1_quest_first_step;
@@ -562,7 +750,6 @@ playSfx('ui-click');
 
   const triggerEncounter = (node: Node) => {
     const pool = Object.values(ENEMIES);
-    // Logic to select enemy based on section or type
     let enemy = pool[Math.floor(Math.random() * pool.length)];
     
     if (node.type === "MiniBoss") {
@@ -571,65 +758,150 @@ playSfx('ui-click');
       enemy = ENEMIES["marshal_scout"];
     }
 
-    setActiveEncounter(enemy);
-    playSfx('encounter');
+    initiateCombat(enemy);
   };
 
   const triggerBoss = (node: Node) => {
-    setActiveEncounter({ ...BOSSES["marshal_argent"], isBoss: true });
+    initiateCombat({ ...BOSSES["marshal_argent"], isBoss: true } as any);
   };
 
-  const handleEncounterResolve = async () => {
-    if (!user || isProcessing) return;
-    setIsAttacking(true);
-    playSfx('slash');
+  const initiateCombat = (enemy: Enemy) => {
+    setCombatState({
+      enemy,
+      enemyHp: enemy.health,
+      playerHp: stats?.health || 10,
+      round: 1,
+      logs: [`${enemy.name} emerges from the shadows!`],
+      isFinished: false,
+      isVictorious: false
+    });
+    setActiveEncounter(null);
+    playSfx('combat-start');
+  };
+
+  const handleCombatAction = async (action: 'strike' | 'defend' | 'evade' | 'retreat' | 'use_card') => {
+    if (!combatState || combatState.isFinished || isProcessing) return;
+    setIsProcessing(true);
     
-    setTimeout(async () => {
-      playSfx('enemy-hit');
-      setIsProcessing(true);
-      try {
-        const updates: any = {
-          updatedAt: serverTimestamp()
-        };
-
-      if (progress?.questProgress?.book1_quest_first_step?.status === "active") {
-        const quest = progress.questProgress.book1_quest_first_step;
-        if (!quest.steps.includes("survive_encounter")) {
-          updates[`questProgress.book1_quest_first_step.steps`] = arrayUnion("survive_encounter");
-        }
-      }
-
-      await updateDoc(doc(db, "playerProgress", user.uid), updates);
+    try {
+      let playerDamage = 0;
+      let enemyDamage = 0;
+      let playerLog = "";
+      let enemyLog = "";
       
-      // Check if quest just completed
-      if (progress?.questProgress?.book1_quest_first_step?.status === "active") {
-        const quest = progress.questProgress.book1_quest_first_step;
-        const currentSteps = [...(quest.steps || [])];
-        if (!currentSteps.includes("survive_encounter")) currentSteps.push("survive_encounter");
-        
-        if (currentSteps.includes("scour_area") && currentSteps.includes("rescue_thatch") && currentSteps.includes("survive_encounter")) {
-          playSfx('quest-complete');
-          setQuestComplete({
-            title: "First Step Complete",
-            description: "You have survived the initial horrors of the Red Country and secured a key ally. The path ahead is long, but you are no longer alone.",
-            rewardName: "Sir Hollin Thatch (Founder Edition)"
-          });
+      const cardBonus = selectedCardId ? (playerInventoryCards.find(c => c.id === selectedCardId)?.playableEffects?.find((e: any) => e.type === 'combat' || e.type === 'all')?.value || 0) : 0;
+      const clueBonus = 0; // Future clue integration
+
+      switch(action) {
+        case 'strike':
+          playSfx('slash');
+          const strikeSuccess = performChallengeCheck(stats?.steel || 0, "Steel", combatState.enemy.defense, cardBonus, clueBonus);
+          if (strikeSuccess) {
+            enemyDamage = 1 + (cardBonus > 0 ? 1 : 0);
+            playerLog = `You strike ${combatState.enemy.name} for ${enemyDamage} damage!`;
+            playSfx('enemy-hit');
+          } else {
+            playerLog = `You swing at ${combatState.enemy.name} but miss.`;
+          }
+          break;
+        case 'defend':
+          playSfx('shield');
+          playerLog = `You brace yourself for the next attack. (Defense +2)`;
+          break;
+        case 'evade':
+          playSfx('evade');
+          const evadeSuccess = performChallengeCheck(stats?.courage || 0, "Courage", combatState.enemy.attack + 2, cardBonus, clueBonus);
+          if (evadeSuccess) {
+            playerLog = `You nimbly dodge the incoming strike!`;
+          } else {
+            playerLog = `You try to dodge, but stumble.`;
+          }
+          break;
+        case 'retreat':
+          playSfx('retreat');
+          playerLog = `You attempt to flee the encounter...`;
+          if (Math.random() > 0.5) {
+            setCombatState(null);
+            addToast("You successfully retreated.", "info");
+            setIsProcessing(false);
+            return;
+          } else {
+            playerLog = `The path is blocked! You cannot escape yet.`;
+          }
+          break;
+      }
+
+      // Enemy Turn (if not defeated)
+      if (combatState.enemyHp - enemyDamage > 0) {
+        const enemyRoll = Math.floor(Math.random() * 20);
+        const defenseBonus = action === 'defend' ? 5 : 0;
+        if (enemyRoll > (stats?.steel || 0) + defenseBonus) {
+          playerDamage = 1;
+          enemyLog = `${combatState.enemy.name} lands a heavy blow! (-1 Health)`;
+          playSfx('damage');
+        } else {
+          enemyLog = `${combatState.enemy.name} attacks but you deflect the blow.`;
         }
       }
 
-      setActiveEncounter(null);
-      setIsAttacking(false);
-      playSfx('reward-reveal');
-      addEffect('+10 Shards', 'shard');
-      setActiveReward({ name: "10 Yellow Shards", type: "shards", value: 10 });
-      await updateDoc(doc(db, "users", user.uid), { yellowShards: increment(10) });
+      const nextEnemyHp = Math.max(0, combatState.enemyHp - enemyDamage);
+      const nextPlayerHp = Math.max(0, combatState.playerHp - playerDamage);
+      const isWin = nextEnemyHp <= 0;
+      const isLoss = nextPlayerHp <= 0;
+
+      setCombatState((prev: any) => ({
+        ...prev,
+        enemyHp: nextEnemyHp,
+        playerHp: nextPlayerHp,
+        round: prev.round + 1,
+        logs: [enemyLog, playerLog, ...prev.logs].filter(l => l !== "").slice(0, 10),
+        isFinished: isWin || isLoss,
+        isVictorious: isWin
+      }));
+
+      if (isWin) {
+        await handleEncounterWin(combatState.enemy);
+      } else if (isLoss) {
+        await handleEncounterLoss(combatState.enemy);
+      }
+
     } catch (err) {
       console.error(err);
-      setIsAttacking(false);
     } finally {
       setIsProcessing(false);
     }
-    }, 600);
+  };
+
+  const handleEncounterWin = async (enemy: any) => {
+    playSfx('quest-complete');
+    const updates: any = {
+      updatedAt: serverTimestamp()
+    };
+    
+    // Check for quest progress
+    if (progress?.questProgress?.book1_quest_first_step?.status === "active") {
+      const quest = progress.questProgress.book1_quest_first_step;
+      if (!quest.steps.includes("survive_encounter")) {
+        updates[`questProgress.book1_quest_first_step.steps`] = arrayUnion("survive_encounter");
+      }
+    }
+
+    if (!user) return;
+    await updateDoc(doc(db, "playerProgress", user.uid), updates);
+    await completeObjective("section_1", "survive_patrol");
+    
+    setActiveReward({ name: "10 Yellow Shards", type: "shards", value: 10 });
+    await updateDoc(doc(db, "users", user.uid), { yellowShards: increment(10) });
+    updateChronicle(`Defeated ${enemy.name}. Found 10 shards.`);
+  };
+
+  const handleEncounterLoss = async (enemy: any) => {
+    if (!user) return;
+    playSfx('failure-hit');
+    await updateDoc(doc(db, "playerStats", user.uid), { health: increment(-1) });
+    addToast("You were defeated and forced to retreat.", "error");
+    updateChronicle(`Defeated by ${enemy.name}. Resilience weakened.`);
+    setCombatState(null);
   };
 
   const grantCard = async (cardId: string, source: string) => {
@@ -679,8 +951,14 @@ playSfx('ui-click');
   );
 
   return (
-    <MainLayout>
-      <div className="relative h-screen pt-20 overflow-hidden bg-obsidian">
+    <MainLayout 
+      fullHeight 
+      showFooter={false} 
+      showNavbar={false} 
+      showSidebar={false} 
+      showBottomNav={false}
+    >
+      <div className="relative h-full overflow-hidden bg-obsidian select-none">
         {/* Cinematic Map Environment */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <img 
@@ -727,229 +1005,349 @@ playSfx('ui-click');
             transition={{ type: "spring", damping: 30, stiffness: 50, mass: 1 }}
           />
         </div>
-
-        {/* Cinematic Header HUD */}
-        <div className="fixed top-24 inset-x-0 z-40 px-6 max-w-7xl mx-auto pointer-events-none">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            {/* Campaign Context */}
+        {/* Game UI Layer */}
+        <AnimatePresence>
+          {isUIVisible && (
             <motion.div 
-              initial={{ x: -30, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              className="glass-panel p-6 rounded-[2rem] border-primary/20 bg-black/80 backdrop-blur-2xl pointer-events-auto min-w-[320px] shadow-[0_15px_40px_rgba(0,0,0,0.8)]"
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center">
-                  <Book className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-zinc-500 text-[9px] uppercase tracking-[0.4em] font-black leading-tight">Book I: Blood on the Yellow Brick</h1>
-                  <h2 className="text-white text-xl font-serif italic tracking-tight">Campaign: Red Country</h2>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between items-end">
-                  <span className="text-zinc-500 text-[8px] uppercase tracking-widest font-bold">Current Objective</span>
-                  <span className="text-primary text-[10px] font-serif italic">Find the Rebel Trail</span>
-                </div>
-                <div className="w-full bg-zinc-900 h-1 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${((progress?.completedNodes?.length || 0) / BOOK_I_NODES.length) * 100}%` }}
-                    className="bg-primary h-full shadow-[0_0_10px_rgba(200,155,44,0.6)]"
-                  />
-                </div>
-                <div className="flex justify-between items-center text-[7px] text-zinc-600 uppercase font-black tracking-widest pt-1">
-                  <span>Progress</span>
-                  <span>{Math.round(((progress?.completedNodes?.length || 0) / BOOK_I_NODES.length) * 100)}% Complete</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Main Stats HUD */}
-            <motion.div 
-              initial={{ y: -30, opacity: 0 }}
+              key="main-hud-overlay"
+              initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              className="flex flex-wrap items-center gap-3 pointer-events-auto"
+              exit={{ y: -100, opacity: 0 }}
+              className="fixed top-0 left-0 right-0 z-40 p-4 pointer-events-none"
             >
-              {/* AP Counter Pill */}
-              <div className="glass-panel px-6 py-3 rounded-full border-primary/20 bg-black/80 flex items-center gap-4 shadow-xl group relative">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-primary fill-primary/20" />
-                  <span className="text-[9px] uppercase font-black tracking-widest text-zinc-400">AP</span>
-                </div>
-                
-                {/* AP Tooltip */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 w-48 z-[60]">
-                   <div className="glass-panel p-4 rounded-2xl border-white/10 bg-black/90 backdrop-blur-3xl text-center space-y-2 shadow-2xl">
-                      <p className="text-[8px] uppercase tracking-widest text-primary font-black">Action Points</p>
-                      <p className="text-[10px] text-zinc-400 font-serif italic leading-relaxed">AP is spent to move, search, and interact. End your turn to refresh AP.</p>
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-black/90" />
-                   </div>
-                </div>
+              <div className="max-w-[1600px] mx-auto flex items-start justify-between gap-4">
+                {/* Left: Progress & Inventory Context */}
+                <div className="flex flex-col gap-2 pointer-events-auto">
+                  <div className="glass-panel px-6 py-3 rounded-2xl flex items-center gap-8 border-primary/20 shadow-2xl bg-black/80 backdrop-blur-3xl">
+                    <div className="flex items-center gap-4 border-r border-white/10 pr-6">
+                      <Link href="/dashboard" className="p-2 hover:bg-white/5 rounded-xl transition-colors text-zinc-500 hover:text-white">
+                        <LogOut className="w-4 h-4 rotate-180" />
+                      </Link>
+                      <div className="h-4 w-px bg-white/10" />
+                      <div className="flex flex-col">
+                        <span className="text-[8px] uppercase font-black text-primary tracking-widest leading-none mb-1">Region</span>
+                        <span className="text-[10px] text-white font-serif italic whitespace-nowrap">Red Country</span>
+                      </div>
+                    </div>
 
-                <div className="flex gap-2">
-                  {[1, 2, 3].map((p) => (
-                    <motion.div 
-                      key={p} 
-                      animate={p <= (progress?.actionPoints || 0) ? { scale: [1, 1.2, 1], opacity: 1 } : { scale: 1, opacity: 0.2 }}
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-3 group">
+                        <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 group-hover:bg-amber-500/20 transition-all">
+                          <Zap className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-[7px] uppercase font-black text-zinc-500 tracking-widest leading-none mb-1">Action Points</p>
+                          <div className="flex gap-1 mt-1">
+                            {[1, 2, 3].map((p) => (
+                              <div 
+                                key={p} 
+                                className={cn(
+                                  "w-2 h-2 rounded-full border transition-all",
+                                  p <= (progress?.actionPoints || 0) ? "bg-amber-500 border-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "bg-transparent border-zinc-700"
+                                )}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 group">
+                        <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 group-hover:bg-red-500/20 transition-all">
+                          <Heart className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-[7px] uppercase font-black text-zinc-500 tracking-widest leading-none mb-1">Health</p>
+                          <p className="text-xs text-white font-serif italic leading-none">{stats?.health || 0}/10</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 group">
+                        <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-primary group-hover:bg-primary/20 transition-all">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-[7px] uppercase font-black text-zinc-500 tracking-widest leading-none mb-1">Yellow Shards</p>
+                          <p className="text-xs text-white font-serif italic leading-none">{profile?.yellowShards || 0}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 group">
+                        <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 group-hover:bg-emerald-500/20 transition-all">
+                          <Star className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-[7px] uppercase font-black text-zinc-500 tracking-widest leading-none mb-1">Level</p>
+                          <p className="text-xs text-white font-serif italic leading-none">{profile?.level || 1}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Secondary Toggles */}
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setShowObjectives(!showObjectives)}
                       className={cn(
-                        "w-4 h-4 rounded-full border-2 transition-all",
-                        p <= (progress?.actionPoints || 0) ? "bg-primary border-primary-accent shadow-[0_0_10px_rgba(200,155,44,0.6)]" : "bg-transparent border-zinc-700"
+                        "px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border shadow-lg backdrop-blur-md",
+                        showObjectives ? "bg-primary/20 border-primary/30 text-primary" : "bg-black/60 border-white/5 text-zinc-500 hover:text-white"
                       )}
-                    />
-                  ))}
-                </div>
-                {progress?.actionPoints === 0 && (
-                  <motion.button
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    onClick={handleEndTurn}
-                    disabled={isProcessing}
-                    className="ml-2 px-4 py-1.5 bg-primary/20 hover:bg-primary/40 border border-primary/30 rounded-full text-[8px] uppercase tracking-widest text-primary font-black transition-all flex items-center gap-2"
-                  >
-                    <span>Rest</span>
-                    <Timer className="w-3 h-3" />
-                  </motion.button>
-                )}
-              </div>
-
-              {/* Sound Toggle */}
-              <button 
-                onClick={toggleSound}
-                className="glass-panel p-3 rounded-full border-primary/20 bg-black/80 text-primary hover:bg-primary/10 transition-all shadow-xl"
-              >
-                {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-              </button>
-
-              {/* Owner Tools Toggle */}
-              {profile?.role === 'owner' && (
-                <button 
-                  onClick={() => setShowOwnerTools(!showOwnerTools)}
-                  className={cn(
-                    "glass-panel p-3 rounded-full border-primary/20 transition-all shadow-xl",
-                    showOwnerTools ? "bg-primary text-black" : "bg-black/80 text-primary hover:bg-primary/10"
-                  )}
-                >
-                  <Wand2 className="w-5 h-5" />
-                </button>
-              )}
-
-              {/* Map Legend Toggle */}
-              <button 
-                onClick={() => setIsLegendOpen(true)}
-                className="glass-panel p-3 rounded-full border-primary/20 bg-black/80 text-primary hover:bg-primary/10 transition-all shadow-xl"
-              >
-                <HelpCircle className="w-5 h-5" />
-              </button>
-
-              {/* Shards Pill */}
-              <div className="glass-panel px-5 py-3 rounded-full border-primary/20 bg-black/80 flex items-center gap-3 shadow-xl">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-lg font-serif italic text-white leading-none">{profile?.yellowShards || 0}</span>
-                <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold">Shards</span>
-              </div>
-
-              {/* Node Status Pill */}
-              <div className="hidden lg:flex glass-panel px-6 py-3 rounded-full border-primary/20 bg-black/80 items-center gap-4 shadow-xl">
-                <MapPin className="w-4 h-4 text-zinc-400" />
-                <div className="flex flex-col">
-                  <span className="text-[7px] uppercase font-bold tracking-widest text-zinc-500">Currently At</span>
-                  <span className="text-xs text-white font-serif italic truncate max-w-[120px]">
-                    {BOOK_I_NODES.find(n => n.id === progress?.currentNode)?.name || "The Void"}
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Stat Cards - Secondary HUD Row */}
-          <div className="mt-6 flex flex-wrap gap-3">
-            {[
-              { icon: <Heart className="w-3 h-3" />, label: "Resilience", value: `${stats?.health || 0}/10`, color: "text-red-500", bg: "bg-red-500/10" },
-              { icon: <Shield className="w-3 h-3" />, label: "Steel", value: stats?.steel || 0, color: "text-zinc-300", bg: "bg-zinc-500/10" },
-              { icon: <Compass className="w-3 h-3" />, label: "Courage", value: stats?.courage || 0, color: "text-amber-500", bg: "bg-amber-500/10" },
-              { icon: <Star className="w-3 h-3" />, label: "Hope", value: stats?.hope || 0, color: "text-blue-400", bg: "bg-blue-500/10" },
-              { icon: <Eye className="w-3 h-3" />, label: "Memory", value: stats?.memory || 0, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + (i * 0.05) }}
-                className="glass-panel px-4 py-2.5 rounded-2xl border-white/5 bg-black/60 pointer-events-auto flex items-center gap-3 shadow-lg"
-              >
-                <div className={cn("p-1.5 rounded-lg", stat.bg, stat.color)}>
-                  {stat.icon}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[7px] uppercase tracking-tighter text-zinc-500 font-bold">{stat.label}</span>
-                  <span className={cn("text-xs font-serif italic font-bold", stat.color)}>{stat.value}</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Owner Tools Panel */}
-          <AnimatePresence>
-            {showOwnerTools && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="mt-6 glass-panel p-6 rounded-[2rem] border-primary/30 bg-black/90 backdrop-blur-3xl pointer-events-auto shadow-2xl max-w-sm"
-              >
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
-                  <Wand2 className="w-5 h-5 text-primary" />
-                  <h3 className="text-[10px] uppercase font-black tracking-widest text-white">Owner Testing Tools</h3>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <button 
-                    onClick={repairProgress}
-                    className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
-                  >
-                    <RefreshCcw className="w-3 h-3 text-primary" />
-                    <span className="text-[8px] uppercase font-black tracking-widest text-zinc-300 text-left">Repair Progress</span>
-                  </button>
-                  <button 
-                    onClick={giveOwnerStats}
-                    className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
-                  >
-                    <Plus className="w-3 h-3 text-emerald-500" />
-                    <span className="text-[8px] uppercase font-black tracking-widest text-zinc-300 text-left">Max Stats</span>
-                  </button>
-                  <button 
-                    onClick={() => giveItem('key', 'rust-key')}
-                    className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
-                  >
-                    <Key className="w-3 h-3 text-amber-500" />
-                    <span className="text-[8px] uppercase font-black tracking-widest text-zinc-300 text-left">Give Rust Key</span>
-                  </button>
-                  <button 
-                    onClick={() => giveItem('fragment', 'map')}
-                    className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
-                  >
-                    <Navigation className="w-3 h-3 text-blue-400" />
-                    <span className="text-[8px] uppercase font-black tracking-widest text-zinc-300 text-left">Add Fragment</span>
-                  </button>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-white/10 text-center">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/20 border border-primary/30 rounded-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[8px] uppercase font-black tracking-widest text-primary">Owner Access Active</span>
+                    >
+                      <Trophy className="w-3 h-3" />
+                      Objectives
+                    </button>
+                    <button 
+                      onClick={() => setShowLog(!showLog)}
+                      className={cn(
+                        "px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border shadow-lg backdrop-blur-md",
+                        showLog ? "bg-primary/20 border-primary/30 text-primary" : "bg-black/60 border-white/5 text-zinc-500 hover:text-white"
+                      )}
+                    >
+                      <HistoryIcon className="w-3 h-3" />
+                      Chronicle
+                    </button>
+                    {isInternal && (
+                      <button 
+                        onClick={() => setShowOwnerTools(!showOwnerTools)}
+                        className={cn(
+                          "px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border shadow-lg backdrop-blur-md",
+                          showOwnerTools ? "bg-purple-500/20 border-purple-500/30 text-purple-400" : "bg-black/60 border-white/5 text-zinc-500 hover:text-white"
+                        )}
+                      >
+                        <Wand2 className="w-3 h-3" />
+                        Admin
+                      </button>
+                    )}
                   </div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+
+                {/* Right Side: Tools & Focus HUD */}
+                <div className="flex flex-col items-end gap-2 pointer-events-auto">
+                  <div className="glass-panel p-1.5 rounded-2xl flex items-center gap-1 border-white/5 bg-black/80 backdrop-blur-3xl shadow-2xl">
+                    <button 
+                      onClick={centerOnCurrentNode}
+                      className="p-3 hover:bg-white/5 rounded-xl transition-all text-zinc-500 hover:text-white"
+                      title="Center on Current Node"
+                    >
+                      <Navigation className="w-4 h-4" />
+                    </button>
+                    <div className="w-px h-4 bg-white/10 mx-1" />
+                    <button 
+                      onClick={toggleSound}
+                      className="p-3 hover:bg-white/5 rounded-xl transition-all text-zinc-500 hover:text-white"
+                      title={soundEnabled ? "Mute SFX" : "Unmute SFX"}
+                    >
+                      {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                    </button>
+                    <button 
+                      onClick={() => setIsLegendOpen(true)}
+                      className="p-3 hover:bg-white/5 rounded-xl transition-all text-zinc-500 hover:text-white"
+                      title="Map Legend"
+                    >
+                      <HelpCircle className="w-4 h-4" />
+                    </button>
+                    <div className="w-px h-4 bg-white/10 mx-1" />
+                    <button 
+                      onClick={() => setIsUIVisible(false)}
+                      className="p-3 hover:bg-primary/10 rounded-xl transition-all text-zinc-500 hover:text-primary group"
+                      title="Focus Mode (Hide UI)"
+                    >
+                      <Eye className="w-4 h-4 group-hover:scale-110" />
+                    </button>
+                  </div>
+                  
+                  {/* Location Tag */}
+                  <div className="px-4 py-2 rounded-full bg-white/[0.02] border border-white/5 backdrop-blur-sm flex items-center gap-2">
+                    <MapPin className="w-3 h-3 text-zinc-600" />
+                    <span className="text-[9px] text-zinc-500 font-serif italic">
+                      {BOOK_I_NODES.find(n => n.id === progress?.currentNode)?.name || "Obscured Road"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Restore UI Button (Visible when HUD is hidden) */}
+        <AnimatePresence>
+          {!isUIVisible && (
+            <motion.button
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              onClick={() => setIsUIVisible(true)}
+              className="fixed top-6 right-6 z-50 p-4 rounded-2xl bg-black/80 border border-primary/30 text-primary shadow-[0_0_30px_rgba(200,155,44,0.2)] hover:scale-105 transition-all backdrop-blur-md flex items-center gap-3"
+            >
+              <Eye className="w-5 h-5" />
+              <span className="text-[9px] uppercase font-black tracking-widest pr-2">Show UI</span>
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* Collapsible Objectives Drawer */}
+        <AnimatePresence>
+          {showObjectives && (
+            <motion.div 
+              initial={{ x: 400, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 400, opacity: 0 }}
+              className="fixed top-20 right-6 bottom-6 w-80 z-50 pointer-events-auto"
+            >
+              <div className="glass-panel h-full flex flex-col p-8 rounded-[3rem] border-primary/20 bg-black/90 backdrop-blur-3xl shadow-3xl overflow-hidden">
+                <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <span className="text-[10px] uppercase font-black tracking-widest text-white">Path Objectives</span>
+                  </div>
+                  <button onClick={() => setShowObjectives(false)} className="text-zinc-600 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-hide">
+                  {Object.entries(CAMPAIGN_OBJECTIVES).map(([id, section]) => (
+                    <div key={`objective-section-${id}`} className="space-y-4">
+                      <p className="text-[9px] uppercase font-black tracking-[0.2em] text-primary/60">{section.title}</p>
+                      <div className="space-y-3">
+                        {section.tasks.map((task, tIdx) => {
+                          const isDone = progress?.sectionObjectives?.[id]?.tasks?.[task.id];
+                          return (
+                            <div key={`${id}-task-${task.id || tIdx}`} className="flex items-center gap-4 group">
+                              <div className={cn(
+                                "w-5 h-5 rounded-lg border flex items-center justify-center transition-all",
+                                isDone ? "bg-primary/20 border-primary text-primary" : "border-white/10 bg-white/5"
+                              )}>
+                                {isDone && <CheckCircle2 className="w-3 h-3" />}
+                              </div>
+                              <span className={cn(
+                                "text-[10px] uppercase tracking-widest font-bold transition-colors",
+                                isDone ? "text-zinc-200" : "text-zinc-500"
+                              )}>
+                                {task.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-white/10">
+                   <div className="space-y-2">
+                     <div className="flex justify-between items-center text-[8px] uppercase tracking-widest font-black text-zinc-500">
+                        <span>Overall Progress</span>
+                        <span>{Math.round(((progress?.completedNodes?.length || 0) / BOOK_I_NODES.length) * 100)}%</span>
+                     </div>
+                     <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${((progress?.completedNodes?.length || 0) / BOOK_I_NODES.length) * 100}%` }}
+                          className="bg-primary h-full shadow-[0_0_10px_rgba(200,155,44,0.6)]"
+                        />
+                     </div>
+                   </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Collapsible Chronicle Drawer */}
+        <AnimatePresence>
+          {showLog && (
+            <motion.div 
+              initial={{ x: -400, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -400, opacity: 0 }}
+              className="fixed top-20 left-6 bottom-6 w-80 z-50 pointer-events-auto"
+            >
+              <div className="glass-panel h-full flex flex-col p-8 rounded-[3rem] border-primary/20 bg-black/90 backdrop-blur-3xl shadow-3xl overflow-hidden">
+                <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-3">
+                    <HistoryIcon className="w-4 h-4 text-primary" />
+                    <span className="text-[10px] uppercase font-black tracking-widest text-white">Chronicle Log</span>
+                  </div>
+                  <button onClick={() => setShowLog(false)} className="text-zinc-600 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-5 pr-2 scrollbar-hide">
+                  {progress?.chronicleLog?.filter(Boolean).map((log: string, i: number) => (
+                    <motion.div 
+                      key={`chronicle-log-${i}-${log.slice(0, 15)}`} 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="flex gap-4 items-start relative pl-4 border-l border-white/5"
+                    >
+                      <div className="absolute left-0 top-1.5 w-1 h-1 rounded-full bg-primary" />
+                      <p className="text-[11px] text-zinc-400 font-serif italic leading-relaxed">{log}</p>
+                    </motion.div>
+                  ))}
+                  {(!progress?.chronicleLog || progress.chronicleLog.length === 0) && (
+                    <p className="text-[10px] text-zinc-600 font-serif italic text-center py-10 uppercase tracking-widest">The pages are silent...</p>
+                  )}
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-white/10">
+                   <p className="text-[8px] text-zinc-600 uppercase tracking-[0.3em] text-center font-bold">End of current records</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Owner Tools Panel Overlay */}
+        <AnimatePresence>
+          {showOwnerTools && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-[60] flex items-center justify-center p-6 pointer-events-none"
+            >
+              <div className="glass-panel p-8 rounded-[3rem] border-primary/30 bg-black/95 backdrop-blur-3xl pointer-events-auto shadow-4xl max-w-sm w-full border-2">
+                <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-6">
+                  <div className="flex items-center gap-4">
+                    <Wand2 className="w-6 h-6 text-primary" />
+                    <h3 className="text-sm uppercase font-black tracking-[0.2em] text-white">Arch-Admin Tools</h3>
+                  </div>
+                  <button onClick={() => setShowOwnerTools(false)} className="p-2 hover:bg-white/5 rounded-full"><X className="w-5 h-5 text-zinc-500" /></button>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-3">
+                  <button onClick={repairProgress} className="flex items-center justify-between px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group">
+                    <span className="text-[10px] uppercase font-black tracking-widest text-zinc-300">Repair Progress</span>
+                    <RefreshCcw className="w-4 h-4 text-primary group-hover:rotate-180 transition-transform duration-500" />
+                  </button>
+                  <button onClick={giveOwnerStats} className="flex items-center justify-between px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group">
+                    <span className="text-[10px] uppercase font-black tracking-widest text-zinc-300">Max Stats</span>
+                    <Plus className="w-4 h-4 text-emerald-500" />
+                  </button>
+                  <button onClick={() => giveItem('key', 'rust-key')} className="flex items-center justify-between px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group">
+                    <span className="text-[10px] uppercase font-black tracking-widest text-zinc-300">Give Rust Key</span>
+                    <Key className="w-4 h-4 text-amber-500" />
+                  </button>
+                  <button onClick={() => giveItem('fragment', 'map')} className="flex items-center justify-between px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group">
+                    <span className="text-[10px] uppercase font-black tracking-widest text-zinc-300">Add Fragment</span>
+                    <Navigation className="w-4 h-4 text-blue-400" />
+                  </button>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-white/10 text-center">
+                  <div className="inline-flex items-center gap-3 px-6 py-2 bg-primary/20 border border-primary/40 rounded-full">
+                    <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                    <span className="text-[9px] uppercase font-black tracking-widest text-primary">System Overridden</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
 
         {/* Map Scroll Container */}
         <div 
           id="map-container"
-          className="relative w-full h-full overflow-auto cursor-grab active:cursor-grabbing p-20 md:p-40 scrollbar-hide select-none z-10"
+          className="relative w-full h-full overflow-auto cursor-grab active:cursor-grabbing pt-24 md:pt-32 pb-10 md:pb-20 px-10 md:px-20 scrollbar-hide select-none z-10"
         >
           <motion.div 
             drag
@@ -1019,7 +1417,7 @@ playSfx('ui-click');
 
               return (
                 <motion.div
-                  key={node.id}
+                  key={`node-${node.id}`}
                   className="absolute"
                   style={{ left: `${node.x * 12}px`, top: `${node.y}%`, transform: 'translate(-50%, -50%)' }}
                   initial={{ scale: 0, opacity: 0 }}
@@ -1116,7 +1514,7 @@ playSfx('ui-click');
                       { icon: <Search className="w-3 h-3 text-amber-500" />, label: "Searchable" },
                       { icon: <Book className="w-3 h-3 text-blue-400" />, label: "Story Event" },
                     ].map((item) => (
-                      <div key={item.label} className="flex items-center gap-3">
+                      <div key={`legend-item-${item.label}`} className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center">{item.icon}</div>
                         <span className="text-[10px] text-zinc-400 uppercase tracking-tighter font-bold">{item.label}</span>
                       </div>
@@ -1147,28 +1545,19 @@ playSfx('ui-click');
 
         {/* CINEMATIC MODALS */}
         <AnimatePresence>
-          {/* Node Interaction Panel - Responsive Modal/Bottom Sheet */}
-          {selectedNode && !activeEvent && !activeEncounter && !activeReward && (
-            <motion.div 
-              key="selected-node-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <div className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-xl" onClick={() => setSelectedNode(null)}>
-                <div className="min-h-full flex items-end md:items-center justify-center p-0 md:p-6">
-                  <motion.div 
-                    initial={{ y: "100%", scale: 0.95 }}
-                    animate={{ y: 0, scale: 1 }}
-                    exit={{ y: "100%", scale: 0.95 }}
-                    transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                    className="w-full max-w-2xl glass-panel p-8 md:p-12 relative rounded-t-[2.5rem] md:rounded-[3rem] border-primary/20 shadow-[0_-20px_100px_rgba(0,0,0,1)] bg-[#0a0a0a]/95 pointer-events-auto overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {/* Background Decor */}
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50" />
-                    <Compass className="absolute -top-12 -right-12 w-64 h-64 text-primary/5 rotate-12 pointer-events-none" />
-
+          {/* Node Interaction Panel - Responsive Side Drawer / Bottom Sheet */}
+          <AnimatePresence>
+            {selectedNode && !activeEvent && !activeEncounter && !activeReward && (
+              <motion.div 
+                key="selected-node-panel"
+                initial={{ x: "100%", opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: "100%", opacity: 0 }}
+                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                className="fixed inset-y-0 right-0 md:top-20 md:bottom-6 md:right-6 w-full md:w-[550px] z-[60] pointer-events-none"
+              >
+                <div className="h-full flex items-end md:items-stretch pointer-events-auto">
+                  <div className="w-full h-[85vh] md:h-full glass-panel p-8 md:p-12 relative rounded-t-[2.5rem] md:rounded-[3rem] border-primary/20 shadow-[0_-20px_100px_rgba(0,0,0,0.8)] bg-black/90 backdrop-blur-2xl overflow-y-auto scrollbar-hide">
                     {/* Header Section */}
                     <div className="flex justify-between items-start mb-8">
                       <div className="space-y-3">
@@ -1195,7 +1584,7 @@ playSfx('ui-click');
                         onClick={() => setSelectedNode(null)}
                         className="p-3 rounded-full hover:bg-white/5 text-zinc-600 hover:text-white transition-all border border-white/5"
                       >
-                        <ChevronRight className="rotate-90 w-5 h-5" />
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
 
@@ -1243,11 +1632,8 @@ playSfx('ui-click');
                             {isInternal && (
                                <div className="flex items-center gap-2 px-3 py-1 bg-primary/20 border border-primary/30 rounded-full">
                                  <div className="w-1 h-1 rounded-full bg-primary animate-pulse" />
-                                 <span className="text-[7px] uppercase font-black tracking-widest text-primary">Owner Override Active</span>
+                                 <span className="text-[7px] uppercase font-black tracking-widest text-primary">Owner Override</span>
                                </div>
-                            )}
-                            {!isInternal && !checkRequirements(selectedNode) && (
-                               <span className="text-[8px] text-amber-500/60 uppercase font-black animate-pulse">Required Artifacts Missing</span>
                             )}
                           </div>
                           
@@ -1276,55 +1662,13 @@ playSfx('ui-click');
                                 {progress.completedNodes.includes(selectedNode.requirements.event) ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                               </div>
                             )}
-                            {selectedNode.requirements.stat && (
-                              <div className={cn(
-                                "flex justify-between items-center p-5 rounded-xl border transition-all",
-                                stats[selectedNode.requirements.stat.name] >= selectedNode.requirements.stat.value ? "bg-blue-500/5 border-blue-500/20 text-blue-400" : "bg-white/[0.02] border-white/5 text-zinc-600"
-                              )}>
-                                <div className="flex items-center gap-4">
-                                  <Sparkles className="w-4 h-4" />
-                                  <span className="text-[11px] uppercase font-black tracking-widest">{selectedNode.requirements.stat.name} {selectedNode.requirements.stat.value}+</span>
-                                </div>
-                                {stats[selectedNode.requirements.stat.name] >= selectedNode.requirements.stat.value ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                              </div>
-                            )}
-                            {selectedNode.requirements.OR && (
-                              <div className="space-y-2">
-                                <p className="text-[7px] text-zinc-600 uppercase font-black tracking-[0.3em] text-center py-2 italic">— OR —</p>
-                                {selectedNode.requirements.OR.map((req, i) => (
-                                  <div key={i} className={cn(
-                                    "flex justify-between items-center p-4 rounded-xl border transition-all",
-                                    (req.key && progress.inventoryKeys.includes(req.key)) || (req.event && progress.completedNodes.includes(req.event)) ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-500" : "bg-white/[0.01] border-white/5 text-zinc-700"
-                                  )}>
-                                    <div className="flex items-center gap-4">
-                                      {req.key ? <Key className="w-3.5 h-3.5" /> : <Book className="w-3.5 h-3.5" />}
-                                      <span className="text-[10px] uppercase font-black tracking-widest">
-                                        {req.key ? req.key.replace("-", " ") : `Event: ${req.event?.split("_").pop()}`}
-                                      </span>
-                                    </div>
-                                    {(req.key && progress.inventoryKeys.includes(req.key)) || (req.event && progress.completedNodes.includes(req.event)) ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
                           </div>
-
-                          {!checkRequirements(selectedNode) && (
-                            <div className="pt-4 border-t border-white/5">
-                              <p className="text-[8px] uppercase font-black tracking-widest text-zinc-600 mb-2">Suggested Next Step</p>
-                              <p className="text-[10px] text-zinc-400 font-serif italic">
-                                {selectedNode.requirements.key === "rust-key" ? "Scour the Farmhouse Ruins or Ash Field for a rusted relic." :
-                                 selectedNode.requirements.key === "steel-gate-key" ? "Seek audience with the rebels to obtain the City of Steel clearance." :
-                                 "Consult your map for other trails to increase your stats or find hidden keys."}
-                              </p>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
 
                     {/* Actions Section */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-4">
                       {progress?.currentNode === selectedNode.id ? (
                         <>
                           {(selectedNode.type === "Search" || selectedNode.type === "EncounterSearch" || selectedNode.type === "HiddenSearch") && (
@@ -1333,7 +1677,7 @@ playSfx('ui-click');
                               whileTap={{ scale: 0.98 }}
                               onClick={() => handleSearch(selectedNode)}
                               disabled={progress.actionPoints < 1 || isProcessing}
-                              className="premium-button premium-button-gold py-6 text-xl flex items-center justify-center gap-4 rounded-2xl disabled:opacity-30"
+                              className="w-full premium-button premium-button-gold py-6 text-xl flex items-center justify-center gap-4 rounded-2xl disabled:opacity-30"
                             >
                               <Search className="w-6 h-6" /> 
                               <div className="text-left">
@@ -1347,7 +1691,7 @@ playSfx('ui-click');
                                whileHover={{ scale: 1.02 }}
                                whileTap={{ scale: 0.98 }}
                                onClick={() => triggerStoryEvent(selectedNode.eventId!)}
-                               className="premium-button py-6 text-xl flex items-center justify-center gap-4 rounded-2xl"
+                               className="w-full premium-button py-6 text-xl flex items-center justify-center gap-4 rounded-2xl"
                              >
                                <Book className="w-6 h-6" />
                                <div className="text-left">
@@ -1356,7 +1700,7 @@ playSfx('ui-click');
                                </div>
                              </motion.button>
                           )}
-                          <div className="flex items-center justify-center p-6 rounded-2xl border border-white/5 bg-white/[0.01] text-zinc-600 font-serif italic text-sm italic col-span-full">
+                          <div className="flex items-center justify-center p-6 rounded-2xl border border-white/5 bg-white/[0.01] text-zinc-600 font-serif italic text-sm text-center">
                              You are currently here.
                           </div>
                         </>
@@ -1366,7 +1710,7 @@ playSfx('ui-click');
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleMove(selectedNode)}
                           disabled={progress.actionPoints < 1 || isProcessing || !checkRequirements(selectedNode)}
-                          className="col-span-full premium-button premium-button-gold py-8 text-2xl flex items-center justify-center gap-5 disabled:grayscale disabled:opacity-30 rounded-3xl"
+                          className="w-full premium-button premium-button-gold py-8 text-2xl flex items-center justify-center gap-5 disabled:grayscale disabled:opacity-30 rounded-3xl"
                         >
                           <Navigation className="w-8 h-8" /> 
                           <div className="text-left">
@@ -1375,26 +1719,24 @@ playSfx('ui-click');
                           </div>
                         </motion.button>
                       ) : (
-                        <div className="col-span-full glass-panel border-white/5 py-8 text-center rounded-3xl flex items-center justify-center gap-5 opacity-40 grayscale">
+                        <div className="w-full glass-panel border-white/5 py-8 text-center rounded-3xl flex items-center justify-center gap-5 opacity-40 grayscale">
                           <Lock className="w-8 h-8" />
                           <span className="font-black uppercase tracking-[0.4em] text-lg">Path Obscured</span>
                         </div>
                       )}
                       
-                      {progress?.unlockedNodes.includes(selectedNode.id) && (
-                        <button 
-                          onClick={() => setSelectedNode(null)}
-                          className="col-span-full py-4 text-[9px] text-zinc-600 hover:text-white uppercase font-black tracking-widest transition-all"
-                        >
-                          Dismiss View
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => setSelectedNode(null)}
+                        className="w-full py-4 text-[9px] text-zinc-600 hover:text-white uppercase font-black tracking-widest transition-all"
+                      >
+                        Dismiss View
+                      </button>
                     </div>
-                  </motion.div>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Story Event - Narrative Immersion */}
           {activeEvent && (
@@ -1452,9 +1794,9 @@ playSfx('ui-click');
                       </button>
                     </div>
                   </div>
-                  {activeEvent.choices.map((choice: any) => (
+                  {activeEvent.choices.filter(Boolean).map((choice: any, idx: number) => (
                     <motion.button
-                      key={choice.id}
+                      key={`choice-${activeEvent.id}-${choice.id || idx}`}
                       whileHover={choice.canDo ? { x: 10, scale: 1.01, backgroundColor: "rgba(255,255,255,0.03)" } : {}}
                       whileTap={choice.canDo ? { scale: 0.99 } : {}}
                       disabled={!choice.canDo || isProcessing}
@@ -1538,7 +1880,7 @@ playSfx('ui-click');
 
           {/* Story Result Modal */}
           {storyResult && (
-            <div className="fixed inset-0 z-[85] bg-black/99 backdrop-blur-3xl overflow-y-auto">
+            <div key="story-result-overlay" className="fixed inset-0 z-[85] bg-black/99 backdrop-blur-3xl overflow-y-auto">
               <div className="min-h-full flex items-center justify-center p-6">
                 <motion.div 
                   initial={{ scale: 0.9, opacity: 0 }}
@@ -1637,8 +1979,8 @@ playSfx('ui-click');
                       </div>
                       <div className="h-px w-10 bg-red-900/30" />
                       <div className="flex items-center gap-1">
-                        {[...Array(activeEncounter.threat)].map((_, i) => (
-                          <div key={i} className="w-2 h-4 bg-red-600 rounded-[1px] shadow-[0_0_8px_rgba(220,38,38,0.5)]" />
+                        {activeEncounter && [...Array(activeEncounter.threat)].map((_, i) => (
+                          <div key={`threat-${i}`} className="w-2 h-4 bg-red-600 rounded-[1px] shadow-[0_0_8px_rgba(220,38,38,0.5)]" />
                         ))}
                       </div>
                     </div>
@@ -1655,9 +1997,9 @@ playSfx('ui-click');
 
                   <div className="flex flex-col items-center md:items-end gap-3">
                     <div className="flex gap-2">
-                       {[...Array(activeEncounter.health)].map((_, i) => (
+                       {activeEncounter && [...Array(activeEncounter.health)].map((_, i) => (
                          <motion.div 
-                           key={i}
+                           key={`health-${i}`}
                            initial={{ scale: 0 }}
                            animate={{ scale: 1 }}
                            transition={{ delay: i * 0.1 }}
@@ -1708,13 +2050,13 @@ playSfx('ui-click');
 
                   <div className="flex flex-col gap-4">
                     <p className="text-[9px] uppercase tracking-[0.4em] text-zinc-500 font-black mb-2">Combat Protocol</p>
-                    {activeEncounter.responses?.map((resp: any) => (
+                    {activeEncounter.responses?.map((resp: any, respIdx: number) => (
                       <motion.button
-                        key={resp.id}
+                        key={`resp-${activeEncounter.id}-${resp.id || respIdx}`}
                         whileHover={{ scale: 1.02, backgroundColor: "rgba(139, 17, 17, 0.1)", borderColor: "rgba(220, 38, 38, 0.5)" }}
                         whileTap={{ scale: 0.98 }}
                         disabled={isProcessing}
-                        onClick={() => handleEncounterResolve()}
+                        onClick={() => initiateCombat(activeEncounter)}
                         className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] flex items-center justify-between group transition-all"
                       >
                         <div className="flex items-center gap-6">
@@ -1734,7 +2076,7 @@ playSfx('ui-click');
                       <motion.button 
                         whileHover={{ scale: 1.02, boxShadow: "0 0 50px rgba(139, 17, 17, 0.4)" }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => handleEncounterResolve()}
+                        onClick={() => initiateCombat(activeEncounter)}
                         disabled={isProcessing}
                         className="premium-button premium-button-red py-8 text-2xl flex items-center justify-center gap-6 rounded-[2.5rem]"
                       >
@@ -1847,67 +2189,214 @@ playSfx('ui-click');
             </div>
           )}
 
-          {/* Quest Completion Modal - Dramatic Achievement */}
-          {questComplete && (
-            <div className="fixed inset-0 z-[90] bg-black/98 backdrop-blur-3xl overflow-y-auto">
-              <div className="min-h-full flex items-center justify-center p-6">
-                <motion.div 
-                  initial={{ scale: 0.5, opacity: 0 }} 
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="w-full max-w-2xl glass-panel p-10 md:p-24 text-center space-y-12 border-primary/40 bg-zinc-950/95 shadow-[0_0_200px_rgba(200,155,44,0.3)] relative overflow-hidden"
-                >
-                {/* Victory Burst Decor */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[60rem] bg-radial-vignette opacity-20 rotate-45 pointer-events-none" />
-                
-                <div className="relative space-y-10">
-                  <div className="flex flex-col items-center gap-6">
-                    <div className="w-24 h-24 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center relative">
-                      <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 animate-pulse" />
-                      <Trophy className="w-10 h-10 text-primary relative z-10" />
-                    </div>
-                    <span className="text-[12px] uppercase tracking-[0.8em] text-primary font-black">Quest Fulfilled</span>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h2 className="text-6xl md:text-8xl text-white font-serif italic drop-shadow-2xl">{questComplete.title}</h2>
-                    <p className="text-xl md:text-2xl text-zinc-400 italic leading-relaxed max-w-lg mx-auto font-serif">
-                      {questComplete.description}
-                    </p>
-                  </div>
-
-                  <div className="p-10 rounded-[3rem] bg-black/60 border border-primary/20 relative group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-6">Legendary Reward Granted</p>
-                    <div className="flex items-center justify-center gap-8">
-                       <div className="w-24 h-32 rounded-xl bg-zinc-900 border border-primary/40 flex items-center justify-center shadow-glow">
-                          <Sparkles className="w-10 h-10 text-primary" />
-                       </div>
-                       <div className="text-left">
-                          <p className="text-white font-serif italic text-3xl">{questComplete.rewardName}</p>
-                          <p className="text-[9px] text-primary uppercase font-black tracking-widest mt-1">Founders Edition Card</p>
-                       </div>
-                    </div>
-                  </div>
-
-                  <motion.button 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setQuestComplete(null)}
-                    className="w-full premium-button premium-button-gold py-8 text-2xl rounded-[2.5rem] shadow-[0_30px_60px_rgba(200,155,44,0.3)]"
+          {/* Turn-Based Combat Overlay */}
+          <AnimatePresence>
+            {combatState && (
+              <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-3xl overflow-y-auto">
+                <div className="min-h-full flex items-center justify-center p-4 md:p-10">
+                  <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-full max-w-5xl glass-panel p-6 md:p-12 rounded-[3rem] border-primary/20 bg-zinc-950/50 shadow-3xl relative overflow-hidden"
                   >
-                    Continue the Journey
-                  </motion.button>
+                    {/* Background Ambience */}
+                    <div className="absolute inset-0 bg-radial-vignette opacity-20 pointer-events-none" />
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10">
+                      {/* Left Side: Enemy & Visuals */}
+                      <div className="space-y-8">
+                        <div className="flex items-center gap-4">
+                          <div className="h-px flex-1 bg-red-600/20" />
+                          <span className="text-[10px] uppercase font-black tracking-[0.4em] text-red-600 animate-pulse">Hostile Engagement</span>
+                          <div className="h-px flex-1 bg-red-600/20" />
+                        </div>
+                        
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-red-600/10 blur-3xl rounded-full scale-125 opacity-50" />
+                          <div className="aspect-[4/5] rounded-[2rem] bg-gradient-to-b from-zinc-900 to-black border border-white/5 flex items-center justify-center relative overflow-hidden">
+                            <Skull className="w-32 h-32 text-red-600/20 absolute bottom-0 right-0 -mr-8 -mb-8 rotate-12" />
+                            <div className="text-center space-y-4">
+                              <h3 className="text-4xl text-white font-serif italic">{combatState.enemy.name}</h3>
+                              <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest">{combatState.enemy.description}</p>
+                            </div>
+                          </div>
+                          
+                          {/* HP Bar Enemy */}
+                          <div className="mt-6 space-y-2">
+                            <div className="flex justify-between items-end">
+                              <span className="text-[9px] text-zinc-500 uppercase font-black">Entity Structural Integrity</span>
+                              <span className="text-lg text-white font-serif italic">{combatState.enemyHp} / {combatState.enemy.health}</span>
+                            </div>
+                            <div className="h-2 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5">
+                              <motion.div 
+                                initial={{ width: "100%" }}
+                                animate={{ width: `${(combatState.enemyHp / combatState.enemy.health) * 100}%` }}
+                                className="h-full bg-gradient-to-r from-red-600 to-red-400 shadow-[0_0_15px_rgba(220,38,38,0.5)]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Side: Player Actions & Log */}
+                      <div className="flex flex-col h-full space-y-8">
+                        <div className="flex-1 space-y-6">
+                           {/* Combat Logs */}
+                           <div className="glass-panel p-6 rounded-2xl border-white/5 bg-black/40 h-48 overflow-y-auto scrollbar-hide space-y-3">
+                              {combatState.logs.filter(Boolean).map((log: string, i: number) => (
+                                <p key={`combat-log-${i}-${log.substring(0, 10)}`} className={cn(
+                                  "text-[11px] font-serif italic leading-relaxed",
+                                  i === 0 ? "text-white" : "text-zinc-500 opacity-60"
+                                )}>
+                                  {log}
+                                </p>
+                              ))}
+                           </div>
+
+                           {/* Player Status */}
+                           <div className="grid grid-cols-2 gap-4">
+                              <div className="glass-panel p-4 rounded-2xl border-white/5 bg-white/[0.02]">
+                                <p className="text-[8px] text-zinc-500 uppercase font-black mb-1">Your Resilience</p>
+                                <div className="flex items-center gap-2">
+                                  <Heart className="w-3 h-3 text-red-500" />
+                                  <span className="text-xl text-white font-serif italic">{combatState.playerHp}</span>
+                                </div>
+                              </div>
+                              <div className="glass-panel p-4 rounded-2xl border-white/5 bg-white/[0.02]">
+                                <p className="text-[8px] text-zinc-500 uppercase font-black mb-1">Active Bonus</p>
+                                <div className="flex items-center gap-2">
+                                  <Sparkles className="w-3 h-3 text-primary" />
+                                  <span className="text-xl text-white font-serif italic">+{selectedCardId ? 2 : 0}</span>
+                                </div>
+                              </div>
+                           </div>
+
+                           {/* Combat Actions */}
+                           {!combatState.isFinished ? (
+                             <div className="grid grid-cols-2 gap-3">
+                               <button 
+                                 onClick={() => handleCombatAction('strike')}
+                                 disabled={isProcessing}
+                                 className="premium-button premium-button-gold py-4 flex flex-col items-center gap-1"
+                               >
+                                 <Sword className="w-4 h-4" />
+                                 <span className="text-[9px] uppercase font-black">Strike</span>
+                               </button>
+                               <button 
+                                 onClick={() => handleCombatAction('defend')}
+                                 disabled={isProcessing}
+                                 className="glass-panel p-4 border-white/10 hover:bg-white/5 flex flex-col items-center gap-1"
+                               >
+                                 <Shield className="w-4 h-4 text-zinc-400" />
+                                 <span className="text-[9px] uppercase font-black text-zinc-400">Defend</span>
+                               </button>
+                               <button 
+                                 onClick={() => handleCombatAction('evade')}
+                                 disabled={isProcessing}
+                                 className="glass-panel p-4 border-white/10 hover:bg-white/5 flex flex-col items-center gap-1"
+                               >
+                                 <Wind className="w-4 h-4 text-zinc-400" />
+                                 <span className="text-[9px] uppercase font-black text-zinc-400">Evade</span>
+                               </button>
+                               <button 
+                                 onClick={() => handleCombatAction('retreat')}
+                                 disabled={isProcessing}
+                                 className="glass-panel p-4 border-red-900/20 hover:bg-red-900/10 flex flex-col items-center gap-1"
+                                >
+                                 <LogOut className="w-4 h-4 text-red-900/40" />
+                                 <span className="text-[9px] uppercase font-black text-red-900/40">Retreat</span>
+                               </button>
+                             </div>
+                           ) : (
+                             <motion.button
+                               initial={{ y: 20, opacity: 0 }}
+                               animate={{ y: 0, opacity: 1 }}
+                               onClick={() => setCombatState(null)}
+                               className={cn(
+                                 "w-full py-6 rounded-2xl text-xl font-serif italic shadow-2xl",
+                                 combatState.isVictorious ? "premium-button premium-button-gold" : "bg-zinc-900 text-zinc-500 border border-white/5"
+                               )}
+                             >
+                               {combatState.isVictorious ? "Claim Victory" : "Accept Defeat"}
+                             </motion.button>
+                           )}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
                 </div>
-              </motion.div>
-            </div>
-          </div>
-          )}
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* Challenge Math Modal - Transparent Mechanics */}
+          <AnimatePresence>
+            {challengeMath && (
+              <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6">
+                 <motion.div 
+                   initial={{ y: 50, opacity: 0 }}
+                   animate={{ y: 0, opacity: 1 }}
+                   className="w-full max-w-md glass-panel p-10 rounded-[3rem] border-primary/20 bg-zinc-950/90 shadow-3xl text-center space-y-8"
+                 >
+                    <div className="space-y-2">
+                      <p className="text-[10px] uppercase font-black tracking-widest text-primary">Challenge Resolution</p>
+                      <h3 className="text-3xl text-white font-serif italic">The Math of Fate</h3>
+                    </div>
+
+                    <div className="space-y-4 py-6 border-y border-white/5">
+                       <div className="flex justify-between text-[11px] uppercase font-bold text-zinc-500">
+                          <span>{challengeMath.statName} Base</span>
+                          <span className="text-white">+{challengeMath.base}</span>
+                       </div>
+                       <div className="flex justify-between text-[11px] uppercase font-bold text-zinc-500">
+                          <span>Card Bonus</span>
+                          <span className="text-emerald-500">+{challengeMath.cardBonus}</span>
+                       </div>
+                       <div className="flex justify-between text-[11px] uppercase font-bold text-zinc-500">
+                          <span>Clue Bonus</span>
+                          <span className="text-blue-500">+{challengeMath.clueBonus}</span>
+                       </div>
+                       <div className="flex justify-between text-[11px] uppercase font-bold text-zinc-500">
+                          <span>Risk Roll (0-2)</span>
+                          <span className="text-primary">+{challengeMath.roll}</span>
+                       </div>
+                       <div className="pt-4 flex justify-between items-center">
+                          <span className="text-xs uppercase font-black text-white tracking-widest">Total Outcome</span>
+                          <div className={cn(
+                            "text-4xl font-serif italic",
+                            challengeMath.isSuccess ? "text-emerald-500" : "text-red-500"
+                          )}>
+                            {challengeMath.total}
+                          </div>
+                       </div>
+                       <div className="flex justify-between text-[9px] uppercase font-black text-zinc-600">
+                          <span>Difficulty</span>
+                          <span>{challengeMath.difficulty}</span>
+                       </div>
+                    </div>
+
+                    <p className="text-sm text-zinc-400 font-serif italic">
+                      {challengeMath.isSuccess 
+                        ? "The gears of the world turn in your favor." 
+                        : "The shadows grow longer. The challenge was too great."}
+                    </p>
+
+                    <button 
+                      onClick={() => setChallengeMath(null)}
+                      className="w-full premium-button premium-button-gold py-4 rounded-2xl"
+                    >
+                      Understood
+                    </button>
+                 </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
         </AnimatePresence>
         
         {/* Map Legend Modal */}
         <AnimatePresence>
           {isLegendOpen && (
-            <div className="fixed inset-0 z-[110] overflow-y-auto bg-black/60 backdrop-blur-md" onClick={() => setIsLegendOpen(false)}>
+            <div key="map-legend-modal" className="fixed inset-0 z-[110] overflow-y-auto bg-black/60 backdrop-blur-md" onClick={() => setIsLegendOpen(false)}>
               <div className="min-h-full flex items-center justify-center p-6">
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -1931,13 +2420,13 @@ playSfx('ui-click');
 
                   <div className="space-y-6">
                     {[
-                      { icon: <Lock className="w-4 h-4 text-zinc-600" />, label: "Locked Nodes", desc: "Locked paths require keys, stats, or completed story events." },
-                      { icon: <Search className="w-4 h-4 text-primary" />, label: "Search Nodes", desc: "Search nodes may reveal keys, cards, shards, or fragments." },
-                      { icon: <Book className="w-4 h-4 text-emerald-500" />, label: "Story Nodes", desc: "Story choices can unlock allies, rewards, or consequences." },
-                      { icon: <Skull className="w-4 h-4 text-red-500" />, label: "Boss Nodes", desc: "Boss encounters require preparation and support." },
-                      { icon: <Zap className="w-4 h-4 text-amber-500" />, label: "Action Points", desc: "AP is spent to move, search, and interact. End your turn to refresh." },
-                    ].map((item, i) => (
-                      <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                      { id: 'locked', icon: <Lock className="w-4 h-4 text-zinc-600" />, label: "Locked Nodes", desc: "Locked paths require keys, stats, or completed story events." },
+                      { id: 'search', icon: <Search className="w-4 h-4 text-primary" />, label: "Search Nodes", desc: "Search nodes may reveal keys, cards, shards, or fragments." },
+                      { id: 'story', icon: <Book className="w-4 h-4 text-emerald-500" />, label: "Story Nodes", desc: "Story choices can unlock allies, rewards, or consequences." },
+                      { id: 'boss', icon: <Skull className="w-4 h-4 text-red-500" />, label: "Boss Nodes", desc: "Boss encounters require preparation and support." },
+                      { id: 'ap', icon: <Zap className="w-4 h-4 text-amber-500" />, label: "Action Points", desc: "AP is spent to move, search, and interact. End your turn to refresh." },
+                    ].map((item) => (
+                      <div key={`legend-block-${item.id}`} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
                         <div className="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center border border-white/5 shrink-0">
                           {item.icon}
                         </div>
@@ -2013,6 +2502,63 @@ playSfx('ui-click');
 
         <AnimatePresence>
           {questComplete && <QuestCompleteEffect title={questComplete.title} />}
+        </AnimatePresence>
+
+        {/* Quest Completion Modal - Dramatic Achievement */}
+        <AnimatePresence>
+          {questComplete && (
+            <div className="fixed inset-0 z-[150] bg-black/98 backdrop-blur-3xl overflow-y-auto">
+              <div className="min-h-full flex items-center justify-center p-6">
+                <motion.div 
+                  initial={{ scale: 0.5, opacity: 0 }} 
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-full max-w-2xl glass-panel p-10 md:p-24 text-center space-y-12 border-primary/40 bg-zinc-950/95 shadow-[0_0_200px_rgba(200,155,44,0.3)] relative overflow-hidden"
+                >
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[60rem] bg-radial-vignette opacity-20 rotate-45 pointer-events-none" />
+                  
+                  <div className="relative space-y-10">
+                    <div className="flex flex-col items-center gap-6">
+                      <div className="w-24 h-24 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center relative">
+                        <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 animate-pulse" />
+                        <Trophy className="w-10 h-10 text-primary relative z-10" />
+                      </div>
+                      <span className="text-[12px] uppercase tracking-[0.8em] text-primary font-black">Quest Fulfilled</span>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h2 className="text-6xl md:text-8xl text-white font-serif italic drop-shadow-2xl">{questComplete.title}</h2>
+                      <p className="text-xl md:text-2xl text-zinc-400 italic leading-relaxed max-w-lg mx-auto font-serif">
+                        {questComplete.description}
+                      </p>
+                    </div>
+
+                    <div className="p-10 rounded-[3rem] bg-black/60 border border-primary/20 relative group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-6">Legendary Reward Granted</p>
+                      <div className="flex items-center justify-center gap-8">
+                         <div className="w-24 h-32 rounded-xl bg-zinc-900 border border-primary/40 flex items-center justify-center shadow-glow">
+                            <Sparkles className="w-10 h-10 text-primary" />
+                         </div>
+                         <div className="text-left">
+                            <p className="text-white font-serif italic text-3xl">{questComplete.rewardName}</p>
+                            <p className="text-[9px] text-primary uppercase font-black tracking-widest mt-1">Founders Edition Card</p>
+                         </div>
+                      </div>
+                    </div>
+
+                    <motion.button 
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setQuestComplete(null)}
+                      className="w-full premium-button premium-button-gold py-8 text-2xl rounded-[2.5rem] shadow-[0_30px_60px_rgba(200,155,44,0.3)]"
+                    >
+                      Continue the Journey
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          )}
         </AnimatePresence>
 
         <BetaNotice />

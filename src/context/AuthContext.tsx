@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { isOwner, repairOwnerProfile, hasPaidAccess, isInternalUser } from "@/lib/auth-utils";
 
@@ -43,26 +43,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Safety timeout to ensure loading state is cleared eventually
-    const safetyTimeout = setTimeout(() => {
-      setLoading(false);
-    }, 10000);
+    let profileUnsub: (() => void) | null = null;
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      try {
-        setUser(user);
-        const isUserOwner = isOwner(user?.uid);
-        setOwnerActive(isUserOwner);
+    const authUnsub = onAuthStateChanged(auth, async (authUser) => {
+      setUser(authUser);
+      const isUserOwner = isOwner(authUser?.uid);
+      setOwnerActive(isUserOwner);
 
-        if (user) {
-          // Auto-repair owner profile if UID matches
-          if (isUserOwner) {
-            await repairOwnerProfile(user.uid);
-          }
+      // Cleanup existing profile listener
+      if (profileUnsub) {
+        profileUnsub();
+        profileUnsub = null;
+      }
 
-          const docRef = doc(db, "users", user.uid);
-          const docSnap = await getDoc(docRef);
-          
+      if (authUser) {
+        // Auto-repair owner profile if UID matches
+        if (isUserOwner) {
+          await repairOwnerProfile(authUser.uid).catch(console.error);
+        }
+
+        const docRef = doc(db, "users", authUser.uid);
+        
+        // Set up real-time listener for profile
+        profileUnsub = onSnapshot(docRef, (docSnap) => {
           if (docSnap.exists()) {
             let data = docSnap.data();
             // Force owner status in-memory for the specified UID
@@ -73,28 +76,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setPaidActive(hasPaidAccess(data));
             setInternalActive(isInternalUser(data));
           } else if (isUserOwner) {
-            // Handle case where owner exists in Auth but not Firestore yet
-            const ownerData = { uid: user.uid, role: "owner", membershipStatus: "owner", username: "Owner" };
+            // Fallback for owner if document doesn't exist yet
+            const ownerData = { uid: authUser.uid, role: "owner", membershipStatus: "owner", username: "Owner" };
             setProfile(ownerData);
             setPaidActive(true);
             setInternalActive(true);
+          } else {
+            setProfile(null);
+            setPaidActive(false);
+            setInternalActive(false);
           }
-        } else {
-          setProfile(null);
-          setPaidActive(false);
-          setInternalActive(false);
-        }
-      } catch (error) {
-        console.error("Auth initialization error:", error);
-      } finally {
+          setLoading(false);
+        }, (error) => {
+          console.error("Profile listener error:", error);
+          setLoading(false);
+        });
+      } else {
+        setProfile(null);
+        setPaidActive(false);
+        setInternalActive(false);
         setLoading(false);
-        clearTimeout(safetyTimeout);
       }
     });
 
     return () => {
-      unsubscribe();
-      clearTimeout(safetyTimeout);
+      authUnsub();
+      if (profileUnsub) profileUnsub();
     };
   }, []);
 

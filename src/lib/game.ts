@@ -18,7 +18,7 @@ export async function checkQuestCompletion(userId: string) {
   const progress = progressDoc.data();
   const quest = progress.questProgress?.[QUEST_FIRST_STEP];
 
-  if (quest && quest.status === "active") {
+  if (quest && quest.status === "active" && !quest.claimed) {
     // Requirements:
     // - visit Gallows Circle (book1_node_004)
     // - complete Rescue Sir Hollin Thatch (step: rescue_thatch)
@@ -43,6 +43,7 @@ async function completeTutorialQuest(userId: string) {
   // Mark quest complete
   await updateDoc(progressRef, {
     [`questProgress.${QUEST_FIRST_STEP}.status`]: "completed",
+    [`questProgress.${QUEST_FIRST_STEP}.claimed`]: true,
     [`questProgress.${QUEST_FIRST_STEP}.completedAt`]: serverTimestamp()
   });
 

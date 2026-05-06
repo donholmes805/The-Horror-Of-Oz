@@ -76,3 +76,91 @@ export const BOOK_I_NODES: Node[] = [
   { id: "book1_node_023", name: "Marshal's Duel Platform", type: "FinalBoss", section: 4, description: "Marshal Argent awaits.", connectedNodes: ["book1_node_022", "book1_node_024"], x: 230, y: 60 },
   { id: "book1_node_024", name: "Red-Stained Exit Path", type: "CampaignComplete", section: 4, description: "The forge falls.", connectedNodes: ["book1_node_023"], x: 240, y: 50 },
 ];
+
+export interface Clue {
+  id: string;
+  title: string;
+  book: number;
+  campaign: string;
+  nodeId: string;
+  description: string;
+  hintText: string;
+  unlocksPath?: string;
+  revealsRequirement?: string;
+}
+
+export const BOOK_I_CLUES: Record<string, Clue> = {
+  "clue_rust_under_brick": {
+    id: "clue_rust_under_brick",
+    title: "Rust Under the Yellow Brick",
+    book: 1,
+    campaign: "red_country",
+    nodeId: "book1_node_003",
+    description: "A series of scratch marks near the derrick base reveals a hidden compartment.",
+    hintText: "Old locks in Red Country rarely need gold. They need rust.",
+    unlocksPath: "book1_node_006"
+  },
+  "clue_straw_knights_last_words": {
+    id: "clue_straw_knights_last_words",
+    title: "The Straw Knight’s Last Words",
+    book: 1,
+    campaign: "red_country",
+    nodeId: "book1_node_004",
+    description: "Carved into the wood of a dead tree are the final thoughts of a fallen scout.",
+    hintText: "Not every rescue needs strength. Some require mercy.",
+    revealsRequirement: "book1_story_rescue_thatch"
+  },
+  "clue_marshal_patrol_pattern": {
+    id: "clue_marshal_patrol_pattern",
+    title: "Marshal Patrol Pattern",
+    book: 1,
+    campaign: "red_country",
+    nodeId: "book1_node_005",
+    description: "A discarded logbook details the movement of the tin enforcers.",
+    hintText: "The patrol circles back after every third bell. (Gives +1 to Evade)",
+  },
+  "clue_living_arches_whisper": {
+    id: "clue_living_arches_whisper",
+    title: "The Living Arches Whisper",
+    book: 1,
+    campaign: "red_country",
+    nodeId: "book1_node_009",
+    description: "The pulsing vines seem to form patterns when viewed from a distance.",
+    hintText: "The path beneath the steel is hidden by memory.",
+    unlocksPath: "book1_node_011"
+  },
+  "clue_furnace_weakness": {
+    id: "clue_furnace_weakness",
+    title: "Furnace Weakness",
+    book: 1,
+    campaign: "red_country",
+    nodeId: "book1_node_022",
+    description: "Schematics found in the foreman's office reveal a structural flaw.",
+    hintText: "The Marshal’s law bends when the furnace heart is broken.",
+  }
+};
+
+export interface SectionObjectives {
+  id: string;
+  title: string;
+  tasks: {
+    id: string;
+    label: string;
+    completed: boolean;
+  }[];
+}
+
+export const CAMPAIGN_OBJECTIVES: Record<string, SectionObjectives> = {
+  "section_1": {
+    id: "section_1",
+    title: "Escape Awakening in Ash",
+    tasks: [
+      { id: "visit_derrick", label: "Visit the Collapsed Oil Derrick", completed: false },
+      { id: "search_relic", label: "Search for a key or useful relic", completed: false },
+      { id: "reach_gallows", label: "Reach Gallows Circle", completed: false },
+      { id: "rescue_thatch", label: "Rescue Sir Hollin Thatch", completed: false },
+      { id: "survive_patrol", label: "Survive one Marshal Patrol", completed: false },
+      { id: "unlock_gate", label: "Unlock Rebel Trail Gate", completed: false }
+    ]
+  }
+};

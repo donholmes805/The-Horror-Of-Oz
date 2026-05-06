@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp, collection, addDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, setDoc, getDoc, serverTimestamp, collection, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { BetaNotice } from "@/components/shared/BetaNotice";
 import { OnboardingModal } from "@/components/shared/OnboardingModal";
 import { cn } from "@/lib/utils";
+import { STARTER_CARD_POOL } from "@/lib/game";
 import { 
   Trophy, 
   Coins, 
@@ -135,17 +136,26 @@ export default function Dashboard() {
   }, [user]);
 
   const handleClaimStarter = async () => {
-    if (!user || isClaiming) return;
+    if (!user || isClaiming || progress?.questProgress?.book1_quest_first_step?.claimed) return;
     setIsClaiming(true);
     try {
-      const cardId = "tin-woodsman-heart";
+      const cardId = STARTER_CARD_POOL[Math.floor(Math.random() * STARTER_CARD_POOL.length)];
       const acquiredAt = serverTimestamp();
       const tradeUnlock = new Date();
       tradeUnlock.setDate(tradeUnlock.getDate() + 14);
       const saleUnlock = new Date();
       saleUnlock.setDate(saleUnlock.getDate() + 90);
 
-      await addDoc(collection(db, "users", user.uid, "playerCards"), {
+      const cardRef = doc(db, "users", user.uid, "playerCards", `${cardId}_starter`);
+      
+      // Claim once check
+      const existing = await getDoc(cardRef);
+      if (existing.exists()) {
+        alert("You have already claimed this starter relic.");
+        return;
+      }
+
+      await setDoc(cardRef, {
         cardId,
         acquiredAt,
         source: "starter_quest",
@@ -153,14 +163,16 @@ export default function Dashboard() {
         saleUnlockDate: saleUnlock,
         marketStatus: "starter_sale_locked",
         tradeable: false,
-        sellable: false
+        sellable: false,
+        bound: true,
+        label: "Starter Earned — Sale Locked"
       });
 
       await updateDoc(doc(db, "playerProgress", user.uid), {
         "questProgress.book1_quest_first_step.claimed": true
       });
 
-      alert("The Tin Woodsman's Heart has been added to your collection!");
+      alert("A legendary starter relic has been added to your collection!");
     } catch (err) {
       console.error(err);
     } finally {
@@ -168,13 +180,30 @@ export default function Dashboard() {
     }
   };
 
-  if (authLoading || loadingProgress) return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6">
-      <div className="w-16 h-16 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin shadow-[0_0_20px_rgba(245,158,11,0.5)]" />
-      <p className="font-serif italic text-amber-500/60 animate-pulse text-xl">Consulting the Oracle...</p>
-    </div>
-  );
+  // Migration for existing users
+  useEffect(() => {
+    if (user && progress && progress.hasStartedCampaign === undefined) {
+      const hasStarted = progress.visitedNodes && progress.visitedNodes.length > 1;
+      updateDoc(doc(db, "playerProgress", user.uid), {
+        hasStartedCampaign: hasStarted,
+        lastPlayedAt: progress.updatedAt || serverTimestamp()
+      }).catch(console.error);
+    }
+  }, [user, progress]);
 
+  // --- HOOKS SECTION END ---
+
+  // Handle loading states
+  if (authLoading || loadingProgress) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6">
+        <div className="w-16 h-16 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin shadow-[0_0_20px_rgba(245,158,11,0.5)]" />
+        <p className="font-serif italic text-amber-500/60 animate-pulse text-xl">Consulting the Oracle...</p>
+      </div>
+    );
+  }
+
+  // Handle unauthenticated state
   if (!user) {
     return (
       <MainLayout>
@@ -204,17 +233,6 @@ export default function Dashboard() {
     if (progress.hasStartedCampaign || (progress.visitedNodes && progress.visitedNodes.length > 1)) return "Resume Adventure";
     return "Start Adventure";
   };
-
-  // Migration for existing users
-  useEffect(() => {
-    if (user && progress && progress.hasStartedCampaign === undefined) {
-      const hasStarted = progress.visitedNodes && progress.visitedNodes.length > 1;
-      updateDoc(doc(db, "playerProgress", user.uid), {
-        hasStartedCampaign: hasStarted,
-        lastPlayedAt: progress.updatedAt || serverTimestamp()
-      }).catch(console.error);
-    }
-  }, [user, progress]);
 
   return (
     <MainLayout>
@@ -292,6 +310,7 @@ export default function Dashboard() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
+              { id: "game-type", q: "What kind of game is this?", a: "The Horror of Oz: Yellow Path Chronicles is a story-board card adventure. You move through book-based locations, spend Action Points, collect clues and cards, use those cards to survive encounters, and unlock the path through each chapter." },
               { id: "shards", q: "What are Yellow Shards?", a: "Yellow Shards are the primary currency of Oz. Use them in the Bazaar to acquire artifacts from other Pathwalkers. During beta, shards are earned through campaign searches and rewards." },
               { id: "first-card", q: "How do I earn my first card?", a: "Artifacts are earned through survival. Complete the 'First Step on the Yellow Path' quest in the campaign to claim your first Legendary relic." },
               { id: "locked", q: "Why is my card locked?", a: "Starter artifacts have a 14-day trade lock and a 90-day sale lock. Some artifacts are Soulbound and can never be traded. Cards active in a campaign session are also temporarily locked." },
@@ -374,21 +393,16 @@ export default function Dashboard() {
                 <p className="text-zinc-400 text-sm mb-8 leading-relaxed italic max-w-sm">
                   The Marshals are tracking your scent through the <span className="text-amber-500/80 font-bold">Farmhouse Ruins</span>. Do not linger in the fog.
                 </p>
-                <div className="flex items-center gap-8">
-                  <Link href="/campaign" className="premium-button px-10 py-4 flex items-center gap-3 group/btn">
-                    <span>{getCampaignLabel()}</span>
-                    <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                  </Link>
-                  <div className="space-y-1">
-                    <p className="text-zinc-500 uppercase tracking-widest text-[8px] font-bold">Exploration</p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-32 h-1 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 w-[8%] shadow-[0_0_10px_rgba(245,158,11,0.4)]" />
-                      </div>
-                      <span className="text-xs text-zinc-300 font-serif italic">8%</span>
-                    </div>
+                  <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
+                    <Link href="/campaign" className="premium-button px-10 py-4 flex items-center gap-3 group/btn w-full sm:w-auto text-center">
+                      <span>{getCampaignLabel()}</span>
+                      <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Link>
+                    <Link href="/play" className="glass-panel px-10 py-4 rounded-xl border-white/10 hover:border-primary/40 hover:bg-primary/5 transition-all flex items-center gap-3 group/arena w-full sm:w-auto text-center">
+                      <Sword className="w-4 h-4 text-primary group-hover/arena:rotate-12 transition-transform" />
+                      <span className="text-[10px] uppercase font-black tracking-widest text-zinc-300 group-hover:text-white">Enter The Arena</span>
+                    </Link>
                   </div>
-                </div>
               </div>
             </motion.div>
 

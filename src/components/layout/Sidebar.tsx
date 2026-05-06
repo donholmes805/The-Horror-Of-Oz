@@ -52,7 +52,7 @@ export function Sidebar() {
         </div>
         <div>
           <p className="font-serif uppercase tracking-widest text-[10px] text-primary">{profile?.username || "Pathwalker"}</p>
-          <p className="text-[10px] text-muted-foreground">Level {profile?.level || 1} | {profile?.shards || 0} Shards</p>
+          <p className="text-[10px] text-muted-foreground">Level {profile?.level || 1} | {profile?.yellowShards || 0} Shards</p>
         </div>
       </div>
 

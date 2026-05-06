@@ -9,7 +9,7 @@ import { BOOK_I_NODES } from "@/constants/campaign";
 import { MASTER_CARDS } from "@/constants/cards";
 import { OWNER_UID } from "@/lib/auth-utils";
 import { motion } from "framer-motion";
-import { Shield, Database, Users, BookOpen, AlertTriangle, CheckCircle, RefreshCcw, Save, Zap, Heart, Star, LayoutDashboard, ArrowRight } from "lucide-react";
+import { Shield, Database, Users, BookOpen, AlertTriangle, CheckCircle, RefreshCcw, Save, Zap, Heart, Star, LayoutDashboard, ArrowRight, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -195,6 +195,16 @@ export default function AdminDashboard() {
                       <div>
                          <p className="text-white font-serif italic">Character Bible</p>
                          <p className="text-[9px] uppercase font-black tracking-widest text-zinc-500">Visual Reference Registry</p>
+                      </div>
+                   </div>
+                   <ArrowRight className="w-4 h-4 text-zinc-800 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </Link>
+                <Link href="/admin/books" className="p-6 bg-white/5 border border-white/10 rounded-2xl group hover:border-primary/40 transition-all flex items-center justify-between">
+                   <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500"><Headphones className="w-5 h-5" /></div>
+                      <div>
+                         <p className="text-white font-serif italic">Audiobook Library</p>
+                         <p className="text-[9px] uppercase font-black tracking-widest text-zinc-500">Narration & Chapter Oversight</p>
                       </div>
                    </div>
                    <ArrowRight className="w-4 h-4 text-zinc-800 group-hover:text-primary group-hover:translate-x-1 transition-all" />

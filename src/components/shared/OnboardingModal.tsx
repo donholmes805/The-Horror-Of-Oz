@@ -36,6 +36,17 @@ const steps: Step[] = [
     ]
   },
   {
+    title: "A Story-Board Card Adventure",
+    description: "The Horror of Oz is a tactical survival experience.",
+    icon: <Compass className="w-10 h-10 text-primary" />,
+    details: [
+      "Move through book-based locations using Action Points (AP).",
+      "Collect clues and cards to unlock secret paths and survive.",
+      "Engage in turn-based combat where your artifacts matter.",
+      "Make choices that permanently affect your character's stats."
+    ]
+  },
+  {
     title: "The First Step",
     description: "Your journey begins in Book I: Blood on the Yellow Brick — Red Country.",
     icon: <MapIcon className="w-10 h-10 text-primary" />,

@@ -21,8 +21,11 @@ import {
   Share2,
   ListMusic,
   Maximize2,
+  User,
+  ShieldCheck,
+  ZapOff,
   Info
-} from "lucide-react";
+} from 'lucide-react';
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
@@ -47,20 +50,39 @@ export default function AudiobookPage() {
   useEffect(() => {
     async function fetchChapter() {
       if (!bookId || !chapterId) return;
-      const snap = await getDoc(doc(db, "books", bookId as string, "chapters", chapterId as string));
-      if (snap.exists()) {
-        setChapter(snap.data());
-      } else {
-        // Fallback for demo
-        setChapter({
-          title: chapterId === "ch-0" ? "Prologue: Storm of Blood" : "Chapter 1: Awakening in Ash",
-          audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-        });
+      
+      try {
+        // 1. Fetch from audiobookChapters first (new dedicated collection)
+        const audioSnap = await getDoc(doc(db, "audiobookChapters", `${bookId}_${chapterId}`));
+        
+        if (audioSnap.exists()) {
+          const data = audioSnap.data();
+          // Status check: Only approved is public. Draft is for admins.
+          const isAdmin = profile?.role === "admin" || profile?.role === "owner";
+          
+          if (data.status === 'approved' || (isAdmin && data.status === 'draft')) {
+            setChapter(data);
+          } else {
+            setChapter({ ...data, audioUrl: null, status: 'unavailable' });
+          }
+        } else {
+          // 2. Fallback to chapters subcollection if not in main audio index yet
+          const snap = await getDoc(doc(db, "books", bookId as string, "chapters", chapterId as string));
+          if (snap.exists()) {
+            setChapter({ ...snap.data(), status: 'unavailable' });
+          } else {
+            setChapter({ title: "Unknown Chapter", status: 'unavailable' });
+          }
+        }
+      } catch (err) {
+        console.error("Audiobook Fetch Error:", err);
+        setChapter({ status: 'unavailable' });
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     fetchChapter();
-  }, [bookId, chapterId]);
+  }, [bookId, chapterId, profile?.role]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -115,6 +137,38 @@ export default function AudiobookPage() {
     }
   };
 
+  const saveProgress = async () => {
+    if (!user || !bookId || !chapterId || !audioRef.current || chapter?.status !== 'approved') return;
+    try {
+      await updateDoc(doc(db, "users", user.uid, "audioProgress", `${bookId}_${chapterId}`), {
+        lastSecond: audioRef.current.currentTime,
+        duration: audioRef.current.duration,
+        completed: audioRef.current.currentTime >= audioRef.current.duration - 5,
+        updatedAt: serverTimestamp()
+      });
+    } catch (err) {
+      // Create if doesn't exist
+      try {
+        const { setDoc } = await import("firebase/firestore");
+        await setDoc(doc(db, "users", user.uid, "audioProgress", `${bookId}_${chapterId}`), {
+          bookId,
+          chapterId,
+          lastSecond: audioRef.current.currentTime,
+          duration: audioRef.current.duration,
+          completed: audioRef.current.currentTime >= audioRef.current.duration - 5,
+          updatedAt: serverTimestamp()
+        });
+      } catch (e) {}
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isPlaying) saveProgress();
+    }, 10000); // Save every 10 seconds
+    return () => clearInterval(interval);
+  }, [isPlaying, user?.uid]);
+
   if (loading) return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6">
       <div className="w-16 h-16 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
@@ -128,7 +182,7 @@ export default function AudiobookPage() {
         {/* Cinematic Backdrop */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_#1a0505_0%,_#000_100%)] opacity-80" />
         <div className="absolute top-0 left-0 right-0 h-[60vh] opacity-20 pointer-events-none">
-          <img src={book?.coverImage} className="w-full h-full object-cover blur-[100px] scale-150" alt="" />
+          <img src={book?.coverImage || undefined} className="w-full h-full object-cover blur-[100px] scale-150" alt="" />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/50 to-black" />
         </div>
 
@@ -151,7 +205,7 @@ export default function AudiobookPage() {
               className="relative aspect-square w-full max-w-[480px] glass-panel p-4 border-white/10 shadow-[0_0_120px_rgba(239,68,68,0.15)] group overflow-hidden rounded-[3rem]"
             >
               <img 
-                src={book?.coverImage} 
+                src={book?.coverImage || undefined} 
                 className={cn(
                   "w-full h-full object-cover rounded-[2.5rem] transition-all duration-[2000ms] ease-out",
                   isPlaying ? "scale-110 opacity-60" : "scale-100 opacity-30"
@@ -224,6 +278,26 @@ export default function AudiobookPage() {
                   </motion.div>
                 </div>
               )}
+
+              {/* Unavailable Overlay */}
+              {isPaid && (!chapter?.audioUrl || chapter?.status === 'unavailable') && (
+                <div className="absolute inset-0 backdrop-blur-md bg-black/60 flex items-center justify-center p-8 z-20">
+                   <div className="text-center space-y-6">
+                      <ZapOff className="w-12 h-12 text-zinc-700 mx-auto" />
+                      <div className="space-y-2">
+                        <h3 className="text-xl text-white font-serif italic">Narration Unavailable</h3>
+                        <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest">The narrator has not yet entered this chapter.</p>
+                      </div>
+                      {(profile?.role === 'admin' || profile?.role === 'owner') && (
+                        <Link href={`/admin/books/${bookId}`}>
+                          <button className="px-6 py-3 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all">
+                            Upload Narration
+                          </button>
+                        </Link>
+                      )}
+                   </div>
+                </div>
+              )}
             </motion.div>
           </div>
 
@@ -283,7 +357,8 @@ export default function AudiobookPage() {
                   </button>
                   <button 
                     onClick={togglePlay}
-                    className="w-28 h-28 rounded-full bg-gradient-to-br from-red-600 via-red-700 to-amber-700 flex items-center justify-center text-white hover:scale-105 transition-all shadow-[0_0_80px_rgba(220,38,38,0.3)] active:scale-95 group relative"
+                    disabled={!isPaid || !chapter?.audioUrl || chapter?.status !== 'approved' && !(profile?.role === 'admin' || profile?.role === 'owner')}
+                    className="w-28 h-28 rounded-full bg-gradient-to-br from-red-600 via-red-700 to-amber-700 flex items-center justify-center text-white hover:scale-105 transition-all shadow-[0_0_80px_rgba(220,38,38,0.3)] active:scale-95 group relative disabled:opacity-50 disabled:grayscale"
                   >
                     <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
                     {isPlaying ? (
@@ -373,7 +448,7 @@ export default function AudiobookPage() {
         {/* Hidden Audio Context */}
         <audio 
           ref={audioRef}
-          src={isPaid ? chapter?.audioUrl : ""}
+          src={isPaid && chapter?.audioUrl ? chapter.audioUrl : undefined}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
           onEnded={() => setIsPlaying(false)}
