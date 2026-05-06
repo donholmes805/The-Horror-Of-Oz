@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp, collection, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -82,11 +82,41 @@ export default function Dashboard() {
     }, 10000);
 
     const unsub = onSnapshot(doc(db, "playerProgress", user.uid), 
-      (snap) => {
-        const data = snap.data();
-        setProgress(data);
-        if (data && !data.seenOnboarding) {
-          setShowOnboarding(true);
+      async (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setProgress(data);
+          if (data && !data.seenOnboarding) {
+            setShowOnboarding(true);
+          }
+        } else {
+          // Initialize missing progress doc
+          const initialProgress = {
+            userId: user.uid,
+            campaignId: "book1_red_country",
+            currentNode: "book1_node_001",
+            completedNodes: [],
+            visitedNodes: ["book1_node_001"],
+            unlockedNodes: ["book1_node_001", "book1_node_002"],
+            revealedNodes: ["book1_node_001", "book1_node_002", "book1_node_003", "book1_node_004", "book1_node_005", "book1_node_006"],
+            actionPoints: 3,
+            mapFragments: 0,
+            inventoryKeys: [],
+            keyItems: [],
+            alliesUnlocked: [],
+            allySupports: [],
+            statusEffects: [],
+            questProgress: {
+              book1_quest_first_step: { status: "active", steps: [] }
+            },
+            completed: false,
+            hasStartedCampaign: false,
+            startedAt: null,
+            lastPlayedAt: null,
+            updatedAt: serverTimestamp(),
+          };
+          await setDoc(doc(db, "playerProgress", user.uid), initialProgress).catch(console.error);
+          setProgress(initialProgress);
         }
         setLoadingProgress(false);
         clearTimeout(timeout);
@@ -109,11 +139,13 @@ export default function Dashboard() {
     setIsClaiming(true);
     try {
       const cardId = "tin-woodsman-heart";
-      const acquiredAt = new Date();
-      const tradeUnlock = new Date(acquiredAt.getTime() + (14 * 24 * 60 * 60 * 1000));
-      const saleUnlock = new Date(acquiredAt.getTime() + (90 * 24 * 60 * 60 * 1000));
+      const acquiredAt = serverTimestamp();
+      const tradeUnlock = new Date();
+      tradeUnlock.setDate(tradeUnlock.getDate() + 14);
+      const saleUnlock = new Date();
+      saleUnlock.setDate(saleUnlock.getDate() + 90);
 
-      await setDoc(doc(db, "users", user.uid, "playerCards", `starter_${Date.now()}`), {
+      await addDoc(collection(db, "users", user.uid, "playerCards"), {
         cardId,
         acquiredAt,
         source: "starter_quest",

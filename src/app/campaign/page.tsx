@@ -40,7 +40,7 @@ import {
   Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { doc, updateDoc, getDoc, arrayUnion, onSnapshot, serverTimestamp, setDoc, increment } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, setDoc, serverTimestamp, collection, addDoc, getDoc, arrayUnion, increment, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { BetaNotice } from "@/components/shared/BetaNotice";
 import Link from "next/link";
@@ -138,17 +138,47 @@ export default function CampaignBoard() {
     }, 10000);
 
     const unsubProgress = onSnapshot(doc(db, "playerProgress", user.uid), 
-      (snap) => {
-        const data = snap.data();
-        setProgress(data);
-        
-        // Campaign Start Detection
-        if (data && !data.hasStartedCampaign) {
-          updateDoc(doc(db, "playerProgress", user.uid), {
-            hasStartedCampaign: true,
-            startedAt: data.startedAt || serverTimestamp(),
-            lastPlayedAt: serverTimestamp()
-          }).catch(console.error);
+      async (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setProgress(data);
+          
+          // Campaign Start Detection
+          if (data && !data.hasStartedCampaign) {
+            updateDoc(doc(db, "playerProgress", user.uid), {
+              hasStartedCampaign: true,
+              startedAt: data.startedAt || serverTimestamp(),
+              lastPlayedAt: serverTimestamp()
+            }).catch(console.error);
+          }
+        } else {
+          // Initialize progress for new users if missing
+          const initialProgress = {
+            userId: user.uid,
+            campaignId: "book1_red_country",
+            currentNode: "book1_node_001",
+            completedNodes: [],
+            visitedNodes: ["book1_node_001"],
+            unlockedNodes: ["book1_node_001", "book1_node_002"],
+            revealedNodes: ["book1_node_001", "book1_node_002", "book1_node_003", "book1_node_004", "book1_node_005", "book1_node_006"],
+            actionPoints: isInternal ? 99 : 3,
+            mapFragments: 0,
+            inventoryKeys: [],
+            keyItems: [],
+            alliesUnlocked: [],
+            allySupports: [],
+            statusEffects: [],
+            questProgress: {
+              book1_quest_first_step: { status: "active", steps: [] }
+            },
+            completed: false,
+            hasStartedCampaign: false,
+            startedAt: null,
+            lastPlayedAt: null,
+            updatedAt: serverTimestamp(),
+          };
+          await setDoc(doc(db, "playerProgress", user.uid), initialProgress).catch(console.error);
+          setProgress(initialProgress);
         }
 
         setLoading(false);
@@ -162,8 +192,27 @@ export default function CampaignBoard() {
     );
 
     const unsubStats = onSnapshot(doc(db, "playerStats", user.uid), 
-      (doc) => {
-        setStats(doc.data());
+      async (snap) => {
+        if (snap.exists()) {
+          setStats(snap.data());
+        } else {
+          const initialStats = {
+            health: 10,
+            courage: 2,
+            hope: 2,
+            steel: 2,
+            memory: 0,
+            enemiesDefeated: 0,
+            searchesCompleted: 0,
+            doorsOpened: 0,
+            choicesMade: 0,
+            bossAttempts: 0,
+            highestThreat: "0",
+            updatedAt: serverTimestamp()
+          };
+          await setDoc(doc(db, "playerStats", user.uid), initialStats).catch(console.error);
+          setStats(initialStats);
+        }
       },
       (error) => {
         console.error("User stats sync error:", error);
@@ -201,15 +250,15 @@ export default function CampaignBoard() {
     const { key, stat, event, OR, AND } = node.requirements;
     
     let met = true;
-    if (key && !progress.inventoryKeys?.includes(key)) met = false;
-    if (stat && stats[stat.name as keyof typeof stats] < stat.value) met = false;
-    if (event && !progress.completedNodes?.includes(event)) met = false;
+    if (key && !progress?.inventoryKeys?.includes(key)) met = false;
+    if (stat && stats?.[stat.name as keyof typeof stats] < stat.value) met = false;
+    if (event && !progress?.completedNodes?.includes(event)) met = false;
     
     if (met && OR && Array.isArray(OR)) {
       const anyMet = OR.some(req => {
-        if (req.key && progress.inventoryKeys?.includes(req.key)) return true;
-        if (req.stat && stats[req.stat.name as keyof typeof stats] >= req.stat.value) return true;
-        if (req.event && progress.completedNodes?.includes(req.event)) return true;
+        if (req.key && progress?.inventoryKeys?.includes(req.key)) return true;
+        if (req.stat && stats?.[req.stat.name as keyof typeof stats] >= req.stat.value) return true;
+        if (req.event && progress?.completedNodes?.includes(req.event)) return true;
         return false;
       });
       if (!anyMet) met = false;
@@ -218,15 +267,15 @@ export default function CampaignBoard() {
     if (met && AND) {
       if (Array.isArray(AND)) {
         const allMet = AND.every(req => {
-          if (req.key && !progress.inventoryKeys?.includes(req.key)) return false;
-          if (req.stat && stats[req.stat.name as keyof typeof stats] < req.stat.value) return false;
-          if (req.event && !progress.completedNodes?.includes(req.event)) return false;
+          if (req.key && !progress?.inventoryKeys?.includes(req.key)) return false;
+          if (req.stat && stats?.[req.stat.name as keyof typeof stats] < req.stat.value) return false;
+          if (req.event && !progress?.completedNodes?.includes(req.event)) return false;
           return true;
         });
         if (!allMet) met = false;
       } else {
-        if (AND.key && !progress.inventoryKeys?.includes(AND.key)) met = false;
-        if (AND.items && progress.mapFragments < AND.items) met = false;
+        if (AND.key && !progress?.inventoryKeys?.includes(AND.key)) met = false;
+        if (AND.items && (progress?.mapFragments || 0) < AND.items) met = false;
       }
     }
 
@@ -295,22 +344,24 @@ export default function CampaignBoard() {
     if (!checkRequirements(node)) return;
 
     setIsProcessing(true);
-    playSfx('ui-click');
+playSfx('ui-click');
     playSfx('map-move');
     addEffect('-1 AP', 'ap');
 
     try {
-      const updates: any = {
-        currentNode: node.id,
-        actionPoints: progress.actionPoints - 1,
-        visitedNodes: arrayUnion(node.id),
-        updatedAt: serverTimestamp()
-      };
-
-      const neighbors = node.connectedNodes;
-      updates.unlockedNodes = arrayUnion(...neighbors);
+      const batch = writeBatch(db);
+      const progressRef = doc(db, "playerProgress", user.uid);
       
-      await updateDoc(doc(db, "playerProgress", user.uid), updates);
+      batch.update(progressRef, {
+        currentNode: node.id,
+        actionPoints: Math.max(0, (progress?.actionPoints || 0) - 1),
+        visitedNodes: arrayUnion(node.id),
+        unlockedNodes: arrayUnion(...(node.connectedNodes || [])),
+        updatedAt: serverTimestamp()
+      });
+
+      await batch.commit();
+      
       setSelectedNode(null);
       addToast(`Moved to ${node.name}`, 'success');
 
@@ -342,7 +393,7 @@ export default function CampaignBoard() {
       const result = pool[Math.floor(Math.random() * pool.length)];
       
       const updates: any = {
-        actionPoints: progress.actionPoints - 1,
+        actionPoints: Math.max(0, (progress.actionPoints || 0) - 1),
         updatedAt: serverTimestamp()
       };
 
@@ -381,7 +432,7 @@ export default function CampaignBoard() {
             id: "c1", 
             label: "Stand Against the Mob", 
             req: "Courage 3", 
-            canDo: stats.courage >= 3 || isInternal,
+            canDo: (stats?.courage || 0) >= 3 || isInternal,
             result: "Unlock Sir Hollin Thatch ally, +1 Courage",
             success: "You drive them back. Thatch is free.",
             failure: "The mob is too strong. You are forced to retreat."
@@ -390,7 +441,7 @@ export default function CampaignBoard() {
             id: "c2", 
             label: "Sneak Around the Gallows", 
             req: "Memory 2", 
-            canDo: stats.memory >= 2 || isInternal,
+            canDo: (stats?.memory || 0) >= 2 || isInternal,
             result: "Unlock Sir Hollin Thatch ally",
             success: "Shadows are your friends. Thatch is free.",
             failure: "A rusted gear squeaks. You are spotted."
@@ -399,7 +450,7 @@ export default function CampaignBoard() {
             id: "c3", 
             label: "Call for Mercy", 
             req: "Hope 3", 
-            canDo: stats.hope >= 3 || isInternal,
+            canDo: (stats?.hope || 0) >= 3 || isInternal,
             result: "Unlock Sir Hollin Thatch ally, +1 Hope",
             success: "Your words resonate. Even tin hearts soften.",
             failure: "Mercy is a foreign concept to these constructs."
@@ -423,8 +474,8 @@ export default function CampaignBoard() {
         title: "Beneath the Living Arches",
         description: "Bio-mechanical flora weaves a canopy of brass leaves and pulsing vines. The air smells of ozone and nectar.",
         choices: [
-          { id: "c1", label: "Commune with the Core", req: "Memory 4", canDo: stats.memory >= 4 || isInternal, result: "+1 Memory, Reveal Hidden Search", success: "You understand the code. The forest speaks.", failure: "The static is deafening." },
-          { id: "c2", label: "Harvest Spare Parts", req: "Steel 3", canDo: stats.steel >= 3 || isInternal, result: "+20 Yellow Shards", success: "You take what you need from the metal stalks.", failure: "The vines lash out." }
+          { id: "c1", label: "Commune with the Core", req: "Memory 4", canDo: (stats?.memory || 0) >= 4 || isInternal, result: "+1 Memory, Reveal Hidden Search", success: "You understand the code. The forest speaks.", failure: "The static is deafening." },
+          { id: "c2", label: "Harvest Spare Parts", req: "Steel 3", canDo: (stats?.steel || 0) >= 3 || isInternal, result: "+20 Yellow Shards", success: "You take what you need from the metal stalks.", failure: "The vines lash out." }
         ]
       });
     } else if (eventId === "book1_story_memory_of_kansas") {
@@ -433,8 +484,8 @@ export default function CampaignBoard() {
         title: "Memory of Kansas",
         description: "The dust forms a familiar shape—a house, a dog, a voice calling your name from the cellar.",
         choices: [
-          { id: "c1", label: "Embrace the Vision", req: "Hope 5", canDo: stats.hope >= 5 || isInternal, result: "+2 Hope, -1 Resilience", success: "The warmth is real, for a moment.", failure: "It's just ash in the wind." },
-          { id: "c2", label: "Deny the Mirage", req: "Steel 4", canDo: stats.steel >= 4 || isInternal, result: "+2 Steel", success: "Oz is the only reality now.", failure: "Doubt creeps in." }
+          { id: "c1", label: "Embrace the Vision", req: "Hope 5", canDo: (stats?.hope || 0) >= 5 || isInternal, result: "+2 Hope, -1 Resilience", success: "The warmth is real, for a moment.", failure: "It's just ash in the wind." },
+          { id: "c2", label: "Deny the Mirage", req: "Steel 4", canDo: (stats?.steel || 0) >= 4 || isInternal, result: "+2 Steel", success: "Oz is the only reality now.", failure: "Doubt creeps in." }
         ]
       });
     } else if (eventId === "book1_story_siege_begins") {
@@ -443,8 +494,8 @@ export default function CampaignBoard() {
         title: "The Siege Begins",
         description: "Rebel forces gather at the Iron Maw. The sky is black with the smoke of the forges.",
         choices: [
-          { id: "c1", label: "Lead the Vanguard", req: "Courage 6", canDo: stats.courage >= 6 || isInternal, result: "+2 Courage, +50 Shards", success: "You are the spearhead of the revolution.", failure: "The wall is too high." },
-          { id: "c2", label: "Support the Artillery", req: "Steel 5", canDo: stats.steel >= 5 || isInternal, result: "+1 Steel, +30 Shards", success: "Steel meets steel. The gates buckle.", failure: "A miscalculation cost you dearly." }
+          { id: "c1", label: "Lead the Vanguard", req: "Courage 6", canDo: (stats?.courage || 0) >= 6 || isInternal, result: "+2 Courage, +50 Shards", success: "You are the spearhead of the revolution.", failure: "The wall is too high." },
+          { id: "c2", label: "Support the Artillery", req: "Steel 5", canDo: (stats?.steel || 0) >= 5 || isInternal, result: "+1 Steel, +30 Shards", success: "Steel meets steel. The gates buckle.", failure: "A miscalculation cost you dearly." }
         ]
       });
     }
@@ -466,7 +517,7 @@ export default function CampaignBoard() {
         updatedAt: serverTimestamp()
       };
 
-      if (progress.questProgress?.book1_quest_first_step?.status === "active") {
+      if (progress?.questProgress?.book1_quest_first_step?.status === "active") {
         const quest = progress.questProgress.book1_quest_first_step;
         if (!quest.steps.includes("rescue_thatch")) {
           updates[`questProgress.book1_quest_first_step.steps`] = arrayUnion("rescue_thatch");
@@ -541,7 +592,7 @@ export default function CampaignBoard() {
           updatedAt: serverTimestamp()
         };
 
-      if (progress.questProgress?.book1_quest_first_step?.status === "active") {
+      if (progress?.questProgress?.book1_quest_first_step?.status === "active") {
         const quest = progress.questProgress.book1_quest_first_step;
         if (!quest.steps.includes("survive_encounter")) {
           updates[`questProgress.book1_quest_first_step.steps`] = arrayUnion("survive_encounter");
@@ -551,9 +602,9 @@ export default function CampaignBoard() {
       await updateDoc(doc(db, "playerProgress", user.uid), updates);
       
       // Check if quest just completed
-      if (progress.questProgress?.book1_quest_first_step?.status === "active") {
+      if (progress?.questProgress?.book1_quest_first_step?.status === "active") {
         const quest = progress.questProgress.book1_quest_first_step;
-        const currentSteps = [...quest.steps];
+        const currentSteps = [...(quest.steps || [])];
         if (!currentSteps.includes("survive_encounter")) currentSteps.push("survive_encounter");
         
         if (currentSteps.includes("scour_area") && currentSteps.includes("rescue_thatch") && currentSteps.includes("survive_encounter")) {
@@ -583,20 +634,26 @@ export default function CampaignBoard() {
 
   const grantCard = async (cardId: string, source: string) => {
     if (!user) return;
-    const acquiredAt = new Date();
-    const tradeUnlock = new Date(acquiredAt.getTime() + (14 * 24 * 60 * 60 * 1000));
-    const saleUnlock = new Date(acquiredAt.getTime() + (90 * 24 * 60 * 60 * 1000));
+    try {
+      const acquiredAt = serverTimestamp();
+      const tradeUnlock = new Date();
+      tradeUnlock.setDate(tradeUnlock.getDate() + 14);
+      const saleUnlock = new Date();
+      saleUnlock.setDate(saleUnlock.getDate() + 90);
 
-    await setDoc(doc(db, "users", user.uid, "playerCards", `${cardId}_${Date.now()}`), {
-      cardId,
-      acquiredAt,
-      source,
-      tradeUnlockDate: tradeUnlock,
-      saleUnlockDate: saleUnlock,
-      marketStatus: source === "starter_quest" ? "starter_sale_locked" : "active",
-      tradeable: false,
-      sellable: false
-    });
+      await addDoc(collection(db, "users", user.uid, "playerCards"), {
+        cardId,
+        acquiredAt,
+        source,
+        tradeUnlockDate: tradeUnlock,
+        saleUnlockDate: saleUnlock,
+        marketStatus: source === "starter_quest" ? "starter_sale_locked" : "active",
+        tradeable: false,
+        sellable: false
+      });
+    } catch (err) {
+      console.error("Failed to grant card:", err);
+    }
   };
 
   if (!user && !loading) {
@@ -917,8 +974,8 @@ export default function CampaignBoard() {
                 node.connectedNodes.map((targetId) => {
                   const target = BOOK_I_NODES.find(n => n.id === targetId);
                   if (!target) return null;
-                  const isUnlocked = progress?.unlockedNodes.includes(node.id) && progress?.unlockedNodes.includes(targetId);
-                  const isTraversed = progress?.visitedNodes.includes(node.id) && progress?.visitedNodes.includes(targetId);
+                  const isUnlocked = progress?.unlockedNodes?.includes(node.id) && progress?.unlockedNodes?.includes(targetId);
+                  const isTraversed = progress?.visitedNodes?.includes(node.id) && progress?.visitedNodes?.includes(targetId);
                   
                   return (
                     <g key={`${node.id}-${targetId}`}>
@@ -951,13 +1008,13 @@ export default function CampaignBoard() {
 
             {/* Nodes Layer */}
             {BOOK_I_NODES.map((node) => {
-              const isRevealed = progress?.revealedNodes.includes(node.id);
+              const isRevealed = progress?.revealedNodes?.includes(node.id);
               if (!isRevealed) return null;
 
-              const isUnlocked = progress?.unlockedNodes.includes(node.id);
+              const isUnlocked = progress?.unlockedNodes?.includes(node.id);
               const isCurrent = progress?.currentNode === node.id;
-              const isCompleted = progress?.completedNodes.includes(node.id);
-              const isVisited = progress?.visitedNodes.includes(node.id);
+              const isCompleted = progress?.completedNodes?.includes(node.id);
+              const isVisited = progress?.visitedNodes?.includes(node.id);
               const isBoss = node.type.includes("Boss");
 
               return (

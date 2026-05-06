@@ -38,7 +38,7 @@ import {
   BadgeCheck
 } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { doc, onSnapshot, collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
+import { doc, onSnapshot, query, collection, where, getDocs, orderBy, limit, setDoc, serverTimestamp } from "firebase/firestore";
 import { BOOK_I_NODES } from "@/constants/campaign";
 import { BOOKS } from "@/constants/library";
 import { MASTER_CARDS, Rarity } from "@/constants/cards";
@@ -70,13 +70,64 @@ export default function PathfinderJournal() {
       return;
     }
 
-    const unsubProgress = onSnapshot(doc(db, "playerProgress", user.uid), (doc) => {
-      if (doc.exists()) setProgress(doc.data());
-    });
+    // Safety timeout to clear loading screen
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 10000);
 
-    const unsubStats = onSnapshot(doc(db, "playerStats", user.uid), (doc) => {
-      if (doc.exists()) setStats(doc.data());
-    });
+    const unsubProgress = onSnapshot(doc(db, "playerProgress", user.uid), 
+      async (snap) => {
+        if (snap.exists()) {
+          setProgress(snap.data());
+        } else {
+          const initialProgress = {
+            userId: user.uid,
+            campaignId: "book1_red_country",
+            currentNode: "book1_node_001",
+            completedNodes: [],
+            visitedNodes: ["book1_node_001"],
+            unlockedNodes: ["book1_node_001", "book1_node_002"],
+            revealedNodes: ["book1_node_001", "book1_node_002", "book1_node_003", "book1_node_004", "book1_node_005", "book1_node_006"],
+            actionPoints: 3,
+            mapFragments: 0,
+            inventoryKeys: [],
+            keyItems: [],
+            alliesUnlocked: [],
+            allySupports: [],
+            statusEffects: [],
+            questProgress: {
+              book1_quest_first_step: { status: "active", steps: [] }
+            },
+            completed: false,
+            hasStartedCampaign: false,
+            startedAt: null,
+            lastPlayedAt: null,
+            updatedAt: serverTimestamp(),
+          };
+          await setDoc(doc(db, "playerProgress", user.uid), initialProgress).catch(console.error);
+          setProgress(initialProgress);
+        }
+      }
+    );
+
+    const unsubStats = onSnapshot(doc(db, "playerStats", user.uid), 
+      async (snap) => {
+        if (snap.exists()) {
+          setStats(snap.data());
+        } else {
+          const initialStats = {
+            health: 10,
+            courage: 2,
+            hope: 2,
+            steel: 2,
+            memory: 1,
+            updatedAt: serverTimestamp()
+          };
+          await setDoc(doc(db, "playerStats", user.uid), initialStats).catch(console.error);
+          setStats(initialStats);
+        }
+      }
+    );
 
     // Fetch Cards
     const fetchCards = async () => {
@@ -97,16 +148,18 @@ export default function PathfinderJournal() {
       const q1 = query(collection(db, "trades"), where("initiatorId", "==", user.uid));
       const q2 = query(collection(db, "trades"), where("receiverId", "==", user.uid));
       const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-      setTrades([...s1.docs.map(d => d.data()), ...s2.docs.map(d => d.data())]);
+      setTrades([...s1.docs.map(d => ({ ...d.data(), id: d.id })), ...s2.docs.map(d => ({ ...d.data(), id: d.id }))]);
     };
 
     Promise.all([fetchCards(), fetchListings(), fetchTrades()]).finally(() => {
       setLoading(false);
+      clearTimeout(timeout);
     });
 
     return () => {
       unsubProgress();
       unsubStats();
+      clearTimeout(timeout);
     };
   }, [user]);
 
